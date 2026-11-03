@@ -97,7 +97,7 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .sigtabs{display:flex;gap:6px;flex-wrap:wrap}
 .sigtabs button[aria-selected="true"]{background:var(--accent);color:var(--panel)}
 .sigtabs button.near::after{content:" ✈";}
-.lreason{flex-basis:100%;font-weight:700;color:var(--ink)!important}
+.lreason{flex-basis:100%;margin:0;font-weight:700;color:var(--ink)!important}
 .lbar{flex-basis:100%;position:relative;height:30px;margin:4px 0 16px;background:var(--field);border-radius:3px}
 .lbar i{position:absolute;top:0;bottom:0;display:block}
 .lbar .op{background:color-mix(in srgb,var(--grn) 45%,transparent)}
@@ -357,21 +357,21 @@ function lpbjOpenIntervals(from,to){
   return res;
 }
 function lpbjStatus(s,e){
-  const iv=lpbjOpenIntervals(s,e);const full=iv.some(([o,c])=>o<=s&&c>=e);
-  const late=full?null:iv.find(([o,c])=>o>s&&o<=s+H&&c>=e);
-  const ok=full||!!late;
-  const now=Date.now();const cur=iv.find(([o,c])=>o<=now&&c>now);
-  const next=lpbjOpenIntervals(now,now+8*24*H).find(([o])=>o>now);
-  let reason;
-  if(full){const iv2=iv.find(([o,c])=>o<=s&&c>=e);reason=`Abierto durante todo el vuelo (cierra a las ${fmtZ(new Date(iv2[1])).slice(6)}).`;}
-  else if(late)reason="";
-  else{
-    const inNow=iv.find(([o,c])=>o<=s&&c>s), nx=lpbjOpenIntervals(s,s+8*24*H).find(([o])=>o>s);
-    if(inNow)reason=`Cierra a las ${fmtZ(new Date(inNow[1])).slice(6)}, antes del fin del vuelo.`;
-    else if(nx&&nx[0]<=s+H)reason=`Abre a las ${fmtZ(new Date(nx[0])).slice(6)} pero cierra a las ${fmtZ(new Date(nx[1])).slice(6)}, antes del fin del vuelo.`;
-    else reason=`Cerrado al despegue y no abre hasta el ${fmtZ(nx?new Date(nx[0]):null)} (más de 1 h después del despegue).`;
+  // Estados: "ok" (abierto al despegue y al fin del vuelo: no se muestra nada),
+  // "warn" (abierto en algún momento antes de despegue + 1 h: aviso y línea de tiempo),
+  // "no" (no abre hasta pasada la primera hora: no disponible).
+  const iv=lpbjOpenIntervals(s-24*H,e+24*H);const z=t=>fmtZ(new Date(t)).slice(6);
+  if(iv.some(([o,c])=>o<=s&&c>=e))return {mode:"ok",msgs:[]};
+  const first=iv.find(([o,c])=>c>s&&o<=s+H);
+  if(first){
+    const msgs=[];
+    if(first[0]>s)msgs.push(`LPBJ está cerrado al despegue y abre a las ${z(first[0])}. Elige otro alternativo para la salida; a partir de esa hora puedes cambiar a LPBJ.`);
+    if(first[1]<e)msgs.push(`LPBJ cierra a las ${z(first[1])}, antes del fin del vuelo (${z(e)}). A partir de esa hora necesitas otro alternativo.`);
+    return {mode:"warn",msgs};
   }
-  return {ok,late:late?late[0]:null,reason,openNow:!!cur,cur,next};
+  const nx=iv.find(([o])=>o>s);
+  const d=new Date(s),wk=d.getUTCDay()===0||d.getUTCDay()===6||ptHoliday(d);
+  return {mode:"no",msgs:[`Cerrado al despegue y no abre hasta ${nx?"el "+fmtZ(new Date(nx[0])):"dentro de varios días"} (más de 1 h después del despegue).${wk?" Fin de semana o festivo en Portugal: solo con PPR.":""}`]};
 }
 function lpbjBar(s,e){
   const a=s-3*H,b=e+3*H,iv=lpbjOpenIntervals(a,b),pc=t=>(Math.min(Math.max(t,a),b)-a)/(b-a)*100;
@@ -390,12 +390,10 @@ function render(){
     const d=OBS[id]||{};const m=d.metar,t=d.taf;
     let closed=false,late=false,ops="";
     if(id==="LPBJ"){
-      const st=lpbjStatus(win.s,win.e);closed=!st.ok;late=!!st.late;
-      ops=`<div class="ops"><span class="pill ${st.late?"warn":st.ok?"":"no"}">${st.late?"DISPONIBLE A PARTIR DE "+fmtZ(new Date(st.late)).slice(6):st.ok?"DISPONIBLE COMO ALTERNATIVO":"NO DISPONIBLE COMO ALTERNATIVO"}</span>
-        ${st.late?`<p class="opswarn">⚠ LPBJ está cerrado al despegue y abre a las ${fmtZ(new Date(st.late)).slice(6)}. Elige otro alternativo para la salida; a partir de esa hora puedes cambiar a LPBJ.</p>`:""}
-        ${st.reason?`<span class="lreason">${st.reason}</span>`:""}
+      const st=lpbjStatus(win.s,win.e);closed=st.mode==="no";late=st.mode==="warn";
+      if(st.mode!=="ok")ops=`<div class="ops">${closed?'<span class="pill no">NO DISPONIBLE COMO ALTERNATIVO</span>':""}
+        ${st.msgs.map(t=>`<p class="${closed?"lreason":"opswarn"}">${closed?"":"⚠ "}${t}</p>`).join("")}
         ${lpbjBar(win.s,win.e)}
-        <span>${st.openNow?"Ahora abierto hasta "+fmtZ(new Date(st.cur[1])).slice(6):"Ahora cerrado"}${st.next&&!st.openNow?" · abre "+fmtZ(new Date(st.next[0])):""}</span>
         <span>L–J 0830–1715 · V 0830–1230 (UTC invierno) · fines de semana y festivos solo PPR</span></div>`;
     }
     let age="",stale=false;
