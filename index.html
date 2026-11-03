@@ -148,6 +148,7 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .mapframe .fmsg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;margin:0;background:var(--field)}
 #live{background:#05080b}
 #live img{object-fit:fill;cursor:default}
+.secov{position:absolute;max-width:none;transform-origin:50% 50%;pointer-events:none;opacity:.9}
 #live .msg{position:absolute;inset:0;display:grid;place-items:center;color:#c9d3dd;font-size:.88rem;text-align:center;padding:20px}
 .mk{position:absolute;transform:translate(-50%,-130%);font:700 .7rem var(--mono);color:#fff;background:rgba(208,49,45,.9);padding:1px 5px;border-radius:3px;white-space:nowrap}
 .mk::after{content:"";position:absolute;left:50%;top:calc(100% + 4px);width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 2px #fff}
@@ -263,10 +264,11 @@ html{scroll-behavior:smooth}
       <div class="live mapframe" id="live">
         <img id="satLive" alt="Imagen satélite de la península ibérica">
         <img id="satCoast" alt="" aria-hidden="true">
+        <img id="secOv" class="secov" src="data/sectores.png" alt="" aria-hidden="true" hidden>
         <div id="marks"></div>
         <div class="msg" id="satMsg" hidden></div>
       </div>
-      <div class="row"><button type="button" id="satLayer">Cambiar a visible</button><span class="note">EUMETSAT · se renueva cada 10 min</span></div>
+      <div class="row"><button type="button" id="satLayer">Cambiar a visible</button><button type="button" id="satView" aria-pressed="false">Zoom sectores</button><button type="button" id="secBtn" aria-pressed="true" hidden>Sectores ✓</button><span class="note">EUMETSAT · cada 10 min</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Mapa de colores OTAN</span><span class="age" id="colAge"></span></div>
@@ -719,10 +721,26 @@ function placeMarks(){
 }
 
 /* ---------- satélite (EUMETSAT WMS) ---------- */
-const BB={s:35.0,w:-10,n:44.6,e:4.4};const BBOX=[BB.s,BB.w,BB.n,BB.e].join(",");
+/* Vistas en EPSG:4326 con proporción 3:2 (grados de lon / grados de lat = 1,5) */
+const VIEWS={pen:{s:35.0,w:-10,n:44.6,e:4.4},sec:{s:36.8,w:-9.45,n:40.6,e:-3.75}};
+let BB=VIEWS[ls.get("mp-view")==="sec"?"sec":"pen"];
+/* Sectores (KML "Mapa Sectorial": LatLonBox y rotación en grados, antihoraria) */
+const SECT={n:40.18845,s:37.49201666666667,e:-4.21225,w:-8.654866666666667,rot:2.618};
+let showSec=ls.get("mp-sec")!=="0";
+function placeOverlay(){
+  const o=$("secOv"),x=v=>(v-BB.w)/(BB.e-BB.w)*100,y=v=>(BB.n-v)/(BB.n-BB.s)*100;
+  Object.assign(o.style,{left:x(SECT.w)+"%",top:y(SECT.n)+"%",width:(x(SECT.e)-x(SECT.w))+"%",height:(y(SECT.s)-y(SECT.n))+"%",transform:`rotate(${-SECT.rot}deg)`});
+  o.hidden=!showSec||!o.dataset.ok;
+  $("secBtn").textContent=showSec?"Sectores ✓":"Sectores";$("secBtn").setAttribute("aria-pressed",showSec);
+  const z=BB===VIEWS.sec;$("satView").textContent=z?"Ver península":"Zoom sectores";$("satView").setAttribute("aria-pressed",z);
+}
+$("secOv").addEventListener("load",()=>{$("secOv").dataset.ok="1";$("secBtn").hidden=false;placeOverlay();});
+$("secOv").addEventListener("error",()=>{$("secOv").hidden=true;});
+$("secBtn").addEventListener("click",()=>{showSec=!showSec;ls.set("mp-sec",showSec?"1":"0");placeOverlay();});
+$("satView").addEventListener("click",()=>{BB=BB===VIEWS.sec?VIEWS.pen:VIEWS.sec;ls.set("mp-view",BB===VIEWS.sec?"sec":"pen");refreshSat();placeMarks();placeOverlay();});
 const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
 let satMode="ir";
-const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+BBOX+"&width=900&height=600&_="+Math.floor(Date.now()/600000);
+const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+[BB.s,BB.w,BB.n,BB.e].join(",")+"&width=900&height=600&_="+Math.floor(Date.now()/600000);
 function refreshSat(){
   const im=$("satLive"),msg=$("satMsg");let i=0;const list=LAYERS[satMode];
   im.onload=()=>{im.style.visibility='';msg.hidden=true;$("satAge").textContent=(satMode==="ir"?"IR 10.8 · ":"visible · ")+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
@@ -743,7 +761,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611032101";
+const BUILD="202611032114";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
