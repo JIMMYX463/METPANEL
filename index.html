@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=JetBrains+Mono:wght@400;600;800&display=swap">
 <style>
-/* Layout: barra superior (reloj, estado, resumen) + barra de ventana de vuelo + mapa significativo de baja cota + tres columnas por aeródromo + satélite y leyenda. Tablet: tarjetas a ancho completo. Móvil: una columna. */
+/* Layout: barra superior (reloj, estado, resumen) + barra de ventana de vuelo + tres columnas por aeródromo + satélite y leyenda. Tablet: tarjetas a ancho completo. Móvil: una columna. */
 :root{
   --bg:#eef1f4; --panel:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d3dae2; --accent:#1f5fa8; --field:#f6f8fa; --hl:#fff3c4;
   --blu:#2f6fd6; --wht:#e9edf1; --grn:#2e9a4a; --ylo:#e7c21b; --amb:#ee8a12; --red:#d0312d; --dark:#18212b; --off:#7b8794; --warn:#c42b27;
@@ -41,11 +41,6 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .box{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px}
 .offline{border:1px solid var(--amb);background:var(--panel);border-radius:6px;padding:12px 14px;font-size:.9rem}
 .offline a{color:var(--accent);font-weight:700}
-.swc{background:var(--field);border-radius:4px;overflow:hidden;min-height:120px;display:grid;place-items:center}
-.swc img{width:100%;height:auto;display:block;background:#fff}
-.swc-msg{display:grid;gap:10px;justify-items:center;text-align:center;padding:20px;font-size:.9rem;color:var(--muted)}
-.swc-msg p{margin:0;max-width:52ch}
-.btn{font:700 .88rem var(--body);padding:9px 14px;border-radius:4px;background:var(--accent);color:var(--panel);text-decoration:none}
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
 .ad{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:grid;min-width:0;scroll-margin-top:140px;transition:opacity .2s}
 .ad.closed{opacity:.5;filter:grayscale(.85)}
@@ -150,12 +145,6 @@ html{scroll-behavior:smooth}
 <div class="wrap">
   <div class="offline" id="offline" hidden>Esta vista no puede descargar datos en vivo. Abre el panel en <a href="https://jimmyx463.github.io/METPANEL/" target="_blank" rel="noopener">jimmyx463.github.io/METPANEL</a>, donde METAR, TAF, NOTAM y satélite se actualizan solos.</div>
 
-  <section class="box" aria-label="Mapa significativo de baja cota" style="display:grid;gap:10px">
-    <div class="sec-h"><span class="label">Mapa significativo de baja cota · Península (AEMET)</span><span class="age" id="swcAge"></span></div>
-    <div class="swc" id="swc"><img id="swcImg" alt="Mapa de tiempo significativo de baja cota de la Península" hidden>
-      <div class="swc-msg" id="swcMsg"><p>El mapa de baja cota de AEMET solo se publica en el Autoservicio Aeronáutico (AMA), con usuario autorizado.</p><a class="btn" href="https://ama.aemet.es/" target="_blank" rel="noopener">Abrir en AEMET AMA ↗</a></div>
-    </div>
-  </section>
 
   <section class="grid" id="cards" aria-label="Aeródromos"></section>
 
@@ -398,9 +387,6 @@ async function load(){
   render();
 }
 
-/* ---------- mapa significativo: se muestra si existe data/swc.png en el repositorio ---------- */
-function loadSwc(){const im=$("swcImg");im.onload=()=>{im.hidden=false;$("swcMsg").hidden=true;$("swcAge").textContent="cargado "+new Date().toISOString().slice(11,16)+"Z";};im.onerror=()=>{im.hidden=true;$("swcMsg").hidden=false;};im.src="data/swc.png?_="+Math.floor(Date.now()/600000);}
-
 /* ---------- satélite (EUMETSAT WMS) ---------- */
 const BBOX="35.5,-10,41,-3";
 const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
@@ -419,8 +405,8 @@ $("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";$(
 $("legend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${n}</span><span>${n==="RED"?"&lt;800 m o &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
 tick();setInterval(tick,1000);
-buildSelects();load();refreshSat();loadSwc();
-setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSwc,600000);setInterval(render,60000);
+buildSelects();load();refreshSat();
+setInterval(load,300000);setInterval(refreshSat,600000);setInterval(render,60000);
 </script>
 
 </body>
