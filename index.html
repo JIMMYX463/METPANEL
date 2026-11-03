@@ -199,8 +199,10 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 .hdn{border:1px solid var(--nline);border-radius:5px}
 .hsum{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:10px 14px}
 .ht{border-collapse:collapse;font-size:.88rem}
+.ht th{text-align:left;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 14px 6px 0;border-bottom:1px solid var(--line)}
 .ht td{padding:5px 14px 5px 0;border-bottom:1px solid var(--line)}
-.ht td:last-child{font-family:var(--mono);color:var(--muted)}
+.ht td:nth-child(2){color:var(--muted)}.ht td:last-child{font-family:var(--mono)}
+.ht{display:block;overflow-x:auto;max-width:100%}
 @media (max-width:700px){.help{padding:0}.help-card{border-radius:0;height:100%}.hcol{grid-template-columns:repeat(2,minmax(0,1fr))}.hcases{grid-template-columns:1fr}}
 @media (min-width:1600px){body{font-size:16px}}
 @media (max-width:1199px){
@@ -367,17 +369,18 @@ html{scroll-behavior:smooth}
 
       <section class="hs">
         <h3><span class="hn">8</span>Actualización de los datos</h3>
-        <table class="ht"><tbody>
-          <tr><td>METAR y TAF</td><td>cada 10 min</td></tr>
-          <tr><td>NOTAM</td><td>cada 30 min</td></tr>
-          <tr><td>Satélite</td><td>cada 10 min</td></tr>
-          <tr><td>Colores OTAN</td><td>cada 30 min</td></tr>
-          <tr><td>Significativo</td><td>cada hora</td></tr>
+        <table class="ht"><thead><tr><th>Dato</th><th>Fuente</th><th>Se actualiza</th></tr></thead><tbody>
+          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>cada 10 min</td></tr>
+          <tr><td>NOTAM</td><td>FAA</td><td>cada 30 min (y 07 · y 37)</td></tr>
+          <tr><td>Colores OTAN</td><td>AEMET · @meteolemobot</td><td>cada 30 min (y 17 · y 47)</td></tr>
+          <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>cada hora (y 17)</td></tr>
+          <tr><td>Satélite</td><td>EUMETSAT</td><td>cada 10 min</td></tr>
         </tbody></table>
+        <p class="note">Los horarios son aproximados: GitHub puede retrasar las descargas unos minutos.</p>
         <ul class="hl">
           <li><span class="livebadge ok"><i></i> En vivo</span> indica que los datos llegan bien. En rojo, no se han podido cargar.</li>
           <li>Un METAR con más de 90 min aparece en <b style="color:var(--warn)">rojo · desactualizado</b>.</li>
-          <li>Al <b>entrar, recargar o volver</b> a la página se carga siempre la última versión con los datos más recientes. Mientras la tienes abierta se refresca sola.</li>
+          <li>Al <b>entrar, recargar o volver</b> a la página se carga siempre la última versión con los datos más recientes. Con la página abierta, comprueba si hay datos nuevos cada 5 min.</li>
         </ul>
       </section>
 
@@ -740,7 +743,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611032055";
+const BUILD="202611032101";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
@@ -757,7 +760,7 @@ window.addEventListener("pageshow",e=>{if(e.persisted){checkVersion();refreshAll
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
 tick();setInterval(tick,1000);
 checkVersion();initWin();load();refreshSat();loadSig();loadCol();loadStations();
-setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSig,600000);setInterval(loadCol,600000);setInterval(render,60000);
+setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSig,300000);setInterval(loadCol,300000);setInterval(render,60000);
 </script>
 
 </body>
