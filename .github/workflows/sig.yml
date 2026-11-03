@@ -1,0 +1,43 @@
+name: Mapa significativo (Telegram)
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "login = iniciar sesión en Telegram (solo la primera vez) · fetch = descargar mapas"
+        type: choice
+        options: [fetch, login]
+        default: fetch
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: metar
+  cancel-in-progress: false
+
+jobs:
+  sig:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q telethon cryptography
+      - name: Telegram
+        env:
+          TG_API_ID: ${{ secrets.TG_API_ID }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          TG_PHONE: ${{ secrets.TG_PHONE }}
+          TG_2FA: ${{ secrets.TG_2FA }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/tg_sig.py "${{ github.event.inputs.modo || 'fetch' }}"
+      - name: Guardar cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull -q --rebase origin main || true
+          git add data/ 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "Mapa significativo $(date -u +%d%H%MZ)" && git push)
