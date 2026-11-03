@@ -1,0 +1,47 @@
+name: Actualizar METAR, TAF y NOTAM
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: metar
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descargar datos
+        run: |
+          mkdir -p data
+          IDS="LEBZ,LPBJ,LEMO"
+          UA="METPANEL dashboard (github.com/JIMMYX463/METPANEL)"
+          keep() { [ -s "$1.tmp" ] && mv "$1.tmp" "$1" || rm -f "$1.tmp"; }
+
+          # METAR y TAF (aviationweather.gov)
+          curl -fsS -A "$UA" "https://aviationweather.gov/api/data/metar?ids=$IDS&format=raw&hours=3" -o data/metar.txt.tmp || true
+          keep data/metar.txt
+          curl -fsS -A "$UA" "https://aviationweather.gov/api/data/taf?ids=$IDS&format=raw" -o data/taf.txt.tmp || true
+          keep data/taf.txt
+
+          # NOTAM de los tres aeródromos (buscador público de la FAA)
+          curl -fsS -A "$UA" -X POST "https://notams.aim.faa.gov/notamSearch/search" \
+            -d "searchType=0&designatorsForLocation=$IDS&offset=0&notamsOnly=false&notamType=N&notamType=R&notamType=C" \
+            -o data/notam.json.tmp || true
+          if jq -e '.notamList' data/notam.json.tmp >/dev/null 2>&1; then keep data/notam.json; else rm -f data/notam.json.tmp; fi
+
+          ls -la data
+
+      - name: Guardar cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || (git commit -m "Datos $(date -u +%d%H%MZ)" && git push)

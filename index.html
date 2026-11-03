@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Panel Meteo LEBZ · LPBJ · LEMO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=JetBrains+Mono:wght@400;600;800&display=swap">
+<style>
+/* Layout: barra superior (reloj, estado, resumen) + barra de ventana de vuelo + mapa significativo de baja cota + tres columnas por aeródromo + satélite y leyenda. Tablet: tarjetas a ancho completo. Móvil: una columna. */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d3dae2; --accent:#1f5fa8; --field:#f6f8fa; --hl:#fff3c4;
+  --blu:#2f6fd6; --wht:#e9edf1; --grn:#2e9a4a; --ylo:#e7c21b; --amb:#ee8a12; --red:#d0312d; --dark:#18212b; --off:#7b8794; --warn:#c42b27;
+  --display:"Archivo",system-ui,sans-serif; --body:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1319;--panel:#161f29;--ink:#e6ebf0;--muted:#93a1b0;--line:#283441;--accent:#6aa5ec;--field:#0f171f;--hl:#3a3212;--wht:#d9dee4;--off:#5f6c79;--warn:#ff6b63;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1319;--panel:#161f29;--ink:#e6ebf0;--muted:#93a1b0;--line:#283441;--accent:#6aa5ec;--field:#0f171f;--hl:#3a3212;--wht:#d9dee4;--off:#5f6c79;--warn:#ff6b63;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.in{max-width:1800px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top-in{padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+h1{font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.5rem;margin:0;line-height:1.1}
+h1 small{display:block;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-stretch:100%}
+.summary{display:flex;gap:8px;flex-wrap:wrap}
+.sum{display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);font:700 .85rem var(--mono);border:1px solid var(--line);border-radius:4px;padding:4px 6px 4px 8px}
+.sum.off{opacity:.45}
+.clock{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;line-height:1.2}
+.clock b{font-size:1.35rem;display:block}
+.clock span{color:var(--muted);font-size:.75rem}
+.livebadge{display:inline-flex;align-items:center;gap:6px;font:600 .75rem var(--mono);color:var(--muted)}
+.livebadge i{width:8px;height:8px;border-radius:50%;background:var(--off)}
+.livebadge.ok i{background:var(--grn)}.livebadge.err i{background:var(--red)}
+.flight{border-top:1px solid var(--line);background:var(--field)}
+.flight-in{padding-block:8px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.flight label{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px 8px}
+.fl-sum{font:600 .82rem var(--mono);color:var(--muted)}
+.wrap{max-width:1800px;margin:0 auto;padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+.label{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px}
+.offline{border:1px solid var(--amb);background:var(--panel);border-radius:6px;padding:12px 14px;font-size:.9rem}
+.offline a{color:var(--accent);font-weight:700}
+.swc{background:var(--field);border-radius:4px;overflow:hidden;min-height:120px;display:grid;place-items:center}
+.swc img{width:100%;height:auto;display:block;background:#fff}
+.swc-msg{display:grid;gap:10px;justify-items:center;text-align:center;padding:20px;font-size:.9rem;color:var(--muted)}
+.swc-msg p{margin:0;max-width:52ch}
+.btn{font:700 .88rem var(--body);padding:9px 14px;border-radius:4px;background:var(--accent);color:var(--panel);text-decoration:none}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.ad{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:grid;min-width:0;scroll-margin-top:140px;transition:opacity .2s}
+.ad.closed{opacity:.5;filter:grayscale(.85)}
+.ad.closed .ad-head{background:repeating-linear-gradient(135deg,transparent 0 8px,var(--field) 8px 16px)}
+.ad-head{display:flex;justify-content:space-between;align-items:stretch;border-bottom:1px solid var(--line)}
+.ad-id{padding:10px 14px;min-width:0}
+.ad-id b{font-family:var(--display);font-stretch:78%;font-size:1.8rem;font-weight:800;display:block;line-height:1}
+.ad-id span{font-size:.82rem;color:var(--muted)}
+.ccs{display:flex}
+.cc{min-width:78px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.45rem;background:var(--off);color:#fff;padding:4px 10px;line-height:1.1}
+.cc+.cc{border-left:1px solid var(--panel)}
+.cc small{font-family:var(--body);font-stretch:100%;font-size:.6rem;letter-spacing:.1em;font-weight:700;opacity:.85}
+.c-BLU{background:var(--blu)!important;color:#fff!important}.c-WHT{background:var(--wht)!important;color:var(--dark)!important}.c-GRN{background:var(--grn)!important;color:#fff!important}.c-YLO{background:var(--ylo)!important;color:var(--dark)!important}.c-AMB{background:var(--amb)!important;color:var(--dark)!important}.c-RED{background:var(--red)!important;color:#fff!important}
+.ops{padding:8px 14px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:.84rem}
+.pill{font:800 .72rem var(--mono);letter-spacing:.06em;padding:3px 8px;border-radius:3px;background:var(--grn);color:#fff}
+.pill.no{background:var(--red)}
+.ops span{color:var(--muted)}
+.ad-body{display:grid;grid-template-columns:1fr;min-width:0}
+.sec{padding:12px 14px;display:grid;gap:10px;min-width:0;border-bottom:1px solid var(--line);align-content:start}
+.sec:last-child{border-bottom:0}
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.raw{font-family:var(--mono);font-size:.9rem;line-height:1.55;background:var(--field);border-radius:4px;padding:8px;overflow-wrap:anywhere;white-space:pre-wrap;margin:0}
+.raw.bar{border-left:6px solid var(--off)}
+.taf-raw{display:grid;gap:3px;padding:6px}
+.tl{display:block;padding:3px 8px;border-left:6px solid var(--off);border-radius:2px}
+.tl.dim{opacity:.45}
+.tl.hit{font-weight:800;background:var(--hl)}
+.bar-BLU{border-left-color:var(--blu)!important}.bar-WHT{border-left-color:var(--wht)!important;box-shadow:inset 1px 0 0 var(--line)}.bar-GRN{border-left-color:var(--grn)!important}.bar-YLO{border-left-color:var(--ylo)!important}.bar-AMB{border-left-color:var(--amb)!important}.bar-RED{border-left-color:var(--red)!important}
+.age{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
+.age.stale{color:var(--warn);font-weight:700}
+.empty{color:var(--muted);font-size:.86rem;margin:0}
+.notams{display:grid;gap:8px}
+.notam{border-left:3px solid var(--line);background:var(--field);border-radius:0 4px 4px 0;padding:7px 9px;display:grid;gap:4px;min-width:0}
+.notam.hit{border-left:6px solid var(--warn);background:var(--hl)}
+.notam.hit p{font-weight:800}
+.notam-h{display:flex;flex-wrap:wrap;gap:4px 10px;font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.notam-h b{color:var(--ink)}
+.notam p{margin:0;font-family:var(--mono);font-size:.8rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.tag{border-radius:3px;padding:0 5px;font-weight:800;font-size:.7rem}
+.tag.new{background:var(--accent);color:var(--panel)}
+.tag.aff{background:var(--warn);color:#fff}
+.bottom{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:start}
+.live{position:relative;background:#05080b;border-radius:4px;overflow:hidden;aspect-ratio:800/629;max-width:100%}
+.live img{position:absolute;inset:0;width:100%;height:100%}
+.live .msg{position:absolute;inset:0;display:grid;place-items:center;color:#c9d3dd;font-size:.88rem;text-align:center;padding:20px}
+.mk{position:absolute;transform:translate(-50%,-130%);font:700 .7rem var(--mono);color:#fff;background:rgba(208,49,45,.9);padding:1px 5px;border-radius:3px;white-space:nowrap}
+.mk::after{content:"";position:absolute;left:50%;top:calc(100% + 4px);width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 2px #fff}
+.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.legend div{display:flex;align-items:center;gap:8px;font-size:.78rem;background:var(--field);border-radius:4px;padding:4px}
+.legend span{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+.chip{font-family:var(--mono);font-size:.74rem;font-weight:600;padding:3px 7px;border-radius:3px;background:var(--off);color:#fff;text-align:center;min-width:34px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:600 .85rem var(--body);padding:7px 12px;border-radius:4px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.links{display:grid;gap:6px}
+.links a{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;color:var(--ink);text-decoration:none;font-size:.88rem}
+.links a span{color:var(--muted);font-size:.78rem}
+.links a:hover{border-color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted);margin:0}
+@media (min-width:1600px){body{font-size:16px}}
+@media (max-width:1199px){
+  .grid{grid-template-columns:1fr}
+  .ad-body{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .ad-body .sec:nth-child(1){border-right:1px solid var(--line)}
+  .ad-body .sec:nth-child(3){grid-column:1/-1}
+  .bottom{grid-template-columns:1fr}
+}
+@media (max-width:700px){
+  .ad-body{grid-template-columns:1fr}
+  .ad-body .sec:nth-child(1){border-right:0}
+  .clock span{display:none}
+  h1{font-size:1.25rem}
+  .summary{order:3;width:100%}
+  .sum{flex:1;justify-content:center}
+  .cc{min-width:60px;font-size:1.2rem}
+  .legend{grid-template-columns:1fr}
+  .raw{font-size:.82rem}
+  .ad{scroll-margin-top:190px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="in top-in">
+    <h1><small>Meteorología aeronáutica</small>LEBZ · LPBJ · LEMO</h1>
+    <nav class="summary" id="summary" aria-label="Resumen por aeródromo"></nav>
+    <span class="livebadge" id="liveBadge"><i></i> Conectando…</span>
+    <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
+  </div>
+  <div class="flight"><div class="in flight-in">
+    <label for="fStart">Inicio vuelo</label><select id="fStart"></select>
+    <label for="fEnd">Fin vuelo</label><select id="fEnd"></select>
+    <button type="button" id="fNow">Desde ahora</button>
+    <span class="fl-sum" id="fSum"></span>
+  </div></div>
+</div>
+
+<div class="wrap">
+  <div class="offline" id="offline" hidden>Esta vista no puede descargar datos en vivo. Abre el panel en <a href="https://jimmyx463.github.io/METPANEL/" target="_blank" rel="noopener">jimmyx463.github.io/METPANEL</a>, donde METAR, TAF, NOTAM y satélite se actualizan solos.</div>
+
+  <section class="box" aria-label="Mapa significativo de baja cota" style="display:grid;gap:10px">
+    <div class="sec-h"><span class="label">Mapa significativo de baja cota · Península (AEMET)</span><span class="age" id="swcAge"></span></div>
+    <div class="swc" id="swc"><img id="swcImg" alt="Mapa de tiempo significativo de baja cota de la Península" hidden>
+      <div class="swc-msg" id="swcMsg"><p>El mapa de baja cota de AEMET solo se publica en el Autoservicio Aeronáutico (AMA), con usuario autorizado.</p><a class="btn" href="https://ama.aemet.es/" target="_blank" rel="noopener">Abrir en AEMET AMA ↗</a></div>
+    </div>
+  </section>
+
+  <section class="grid" id="cards" aria-label="Aeródromos"></section>
+
+  <section class="bottom">
+    <div class="box" style="display:grid;gap:10px">
+      <div class="sec-h"><span class="label">Satélite · Meteosat IR 10.8 · EUMETSAT</span><span class="age" id="satAge"></span></div>
+      <div class="live" id="live">
+        <img id="satLive" alt="Imagen satélite infrarroja del suroeste de la península">
+        <img id="satCoast" alt="" aria-hidden="true">
+        <span class="mk" style="left:45.4%;top:38.4%">LEBZ</span><span class="mk" style="left:29.6%;top:53.1%">LPBJ</span><span class="mk" style="left:62.6%;top:69.6%">LEMO</span>
+        <div class="msg" id="satMsg" hidden></div>
+      </div>
+      <div class="row"><button type="button" id="satLayer">Cambiar a visible</button><span class="note">Se renueva cada 10 min.</span></div>
+    </div>
+    <div class="box" style="display:grid;gap:10px">
+      <div class="label">Código de colores OTAN</div>
+      <div class="legend" id="legend"></div>
+      <p class="note">Peor de visibilidad y techo (BKN, OVC o VV). El color TAF de cabecera es el peor tramo dentro de la ventana de vuelo.</p>
+      <p class="note"><b style="color:var(--ink)">Negrita resaltada</b>: tramos del TAF y NOTAM que coinciden con la ventana de vuelo.</p>
+      <div class="label" style="margin-top:4px">Fuentes oficiales</div>
+      <div class="links">
+        <a href="https://ama.aemet.es/" target="_blank" rel="noopener">AEMET AMA <span>METAR/TAF/mapas ↗</span></a>
+        <a href="https://notampib.enaire.es/" target="_blank" rel="noopener">ENAIRE NOTAM <span>LEBZ · LEMO ↗</span></a>
+        <a href="https://ops.nav.pt/" target="_blank" rel="noopener">NAV Portugal <span>LPBJ ↗</span></a>
+        <a href="https://view.eumetsat.int/productviewer?v=default" target="_blank" rel="noopener">EUMETSAT View <span>satélite ↗</span></a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const ADS={LEBZ:"Badajoz / Talavera la Real",LPBJ:"Beja (BA11)",LEMO:"Morón (Sevilla)"};
+const STATES=[["BLU",8000,2500],["WHT",5000,1500],["GRN",3700,700],["YLO",1600,300],["AMB",800,200],["RED",0,0]];
+const RANK=Object.fromEntries(STATES.map((s,i)=>[s[0],i]));
+const H=3600000;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const p2=x=>String(x).padStart(2,"0");
+const fmtZ=d=>d==="PERM"?"PERM":d?p2(d.getUTCDate())+"/"+p2(d.getUTCMonth()+1)+" "+p2(d.getUTCHours())+p2(d.getUTCMinutes())+"Z":"—";
+const overlap=(a1,a2,b1,b2)=>a1<b2&&b1<a2;
+
+/* ---------- ventana de vuelo ---------- */
+let win={s:0,e:0};
+function buildSelects(){
+  const now=Date.now(),base=Math.floor(now/(H/2))*(H/2)-H;
+  const opts=[];for(let t=base;t<=base+36*H;t+=H/2)opts.push(t);
+  const lab=t=>{const d=new Date(t);return d.toLocaleDateString("es-ES",{weekday:"short",day:"2-digit",timeZone:"UTC"})+" · "+p2(d.getUTCHours())+p2(d.getUTCMinutes())+"Z";};
+  $("fStart").innerHTML=opts.map(t=>`<option value="${t}">${lab(t)}</option>`).join("");
+  $("fEnd").innerHTML=opts.map(t=>`<option value="${t}">${lab(t)}</option>`).join("");
+  let s=+ls.get("mp-fs"),e=+ls.get("mp-fe");
+  const snap=t=>opts.reduce((a,b)=>Math.abs(b-t)<Math.abs(a-t)?b:a,opts[0]);
+  if(!s||s<now-6*H||s>opts[opts.length-1]){s=snap(now);e=s+2*H;}
+  s=snap(s);e=snap(e||s+2*H);if(e<=s)e=s+H/2;
+  $("fStart").value=s;$("fEnd").value=e;setWin();
+}
+function setWin(){
+  win.s=+$("fStart").value;win.e=+$("fEnd").value;
+  if(win.e<=win.s){win.e=win.s+H/2;$("fEnd").value=win.e;}
+  ls.set("mp-fs",win.s);ls.set("mp-fe",win.e);
+  const m=(win.e-win.s)/60000;$("fSum").textContent=`${Math.floor(m/60)} h ${p2(m%60)} min`;
+  render();
+}
+$("fStart").addEventListener("change",()=>{const d=win.e-win.s;$("fEnd").value=+$("fStart").value+Math.max(d,H/2);if(!$("fEnd").value)$("fEnd").selectedIndex=$("fEnd").options.length-1;setWin();});
+$("fEnd").addEventListener("change",setWin);
+$("fNow").addEventListener("click",()=>{ls.set("mp-fs","");buildSelects();});
+
+/* ---------- METAR / TAF ---------- */
+function parseWx(tok){
+  let vis=null,ceil=null,cavok=false;
+  for(const t of tok){
+    if(t==="CAVOK"){cavok=true;vis=10000;}
+    else if(/^\d{4}$/.test(t)&&vis===null){vis=t==="9999"?10000:+t;}
+    else if(/^(BKN|OVC)\d{3}/.test(t)){const h=+t.slice(3,6)*100;if(ceil===null||h<ceil)ceil=h;}
+    else if(/^VV\d{3}/.test(t)){const h=+t.slice(2,5)*100;if(ceil===null||h<ceil)ceil=h;}
+    else if(/^(NSC|SKC|CLR|NCD)$/.test(t)){ceil=ceil??99999;}
+  }
+  if(ceil===null&&(cavok||tok.some(t=>/^(FEW|SCT)\d{3}/.test(t))))ceil=99999;
+  return {vis,ceil};
+}
+function colour(vis,ceil){const v=vis??10000,c=ceil??99999;for(const [n,mv,mc] of STATES){if(v>=mv&&c>=mc)return n;}return "RED";}
+function dayTime(dd,hh,mm,ref){ // día del mes + hora -> Date UTC cercana a ref
+  const r=new Date(ref);let d=new Date(Date.UTC(r.getUTCFullYear(),r.getUTCMonth(),dd,0,mm||0)+hh*H);
+  if(d-r>15*24*H)d=new Date(Date.UTC(r.getUTCFullYear(),r.getUTCMonth()-1,dd,0,mm||0)+hh*H);
+  else if(r-d>15*24*H)d=new Date(Date.UTC(r.getUTCFullYear(),r.getUTCMonth()+1,dd,0,mm||0)+hh*H);
+  return d;
+}
+const per=(s,ref)=>{const m=s.match(/^(\d{2})(\d{2})\/(\d{2})(\d{2})$/);return m?[dayTime(+m[1],+m[2],0,ref),dayTime(+m[3],+m[4],0,ref)]:null;};
+function parseMetar(s){
+  const tok=s.split(" ");const r={raw:s,time:tok.find(x=>/^\d{6}Z$/.test(x))};
+  Object.assign(r,parseWx(tok));r.cc=colour(r.vis,r.ceil);
+  if(r.time)r.at=dayTime(+r.time.slice(0,2),+r.time.slice(2,4),+r.time.slice(4,6),Date.now());
+  return r;
+}
+function parseTaf(raw){
+  const pre=(raw.match(/^TAF( AMD| COR)? \w{4} \d{6}Z /)||[""])[0];
+  const tok=raw.slice(pre.length).split(" ");const groups=[];let cur={kind:"BASE",tok:[]};
+  for(let i=0;i<tok.length;i++){
+    const t=tok[i];
+    if((/^(BECMG|TEMPO|FM\d{6})$/.test(t)||/^PROB\d{2}$/.test(t))&&!(t==="TEMPO"&&/^PROB/.test(tok[i-1]||""))){groups.push(cur);cur={kind:t,tok:[t]};}
+    else cur.tok.push(t);
+  }
+  groups.push(cur);
+  const now=Date.now();const vp=per(tok.find(x=>/^\d{4}\/\d{4}$/.test(x))||"",now)||[new Date(now),new Date(now+24*H)];
+  const gs=groups.filter(g=>g.tok.length);
+  // periodos de cada tramo
+  gs.forEach((g,i)=>{
+    if(i===0){g.from=vp[0];g.to=vp[1];}
+    else if(/^FM/.test(g.kind)){const m=g.kind.match(/^FM(\d{2})(\d{2})(\d{2})$/);g.from=dayTime(+m[1],+m[2],+m[3],now);g.to=vp[1];}
+    else{const p=per(g.tok.find(x=>/^\d{4}\/\d{4}$/.test(x))||"",now)||vp;g.from=p[0];g.to=/^BECMG/.test(g.kind)?vp[1]:p[1];}
+  });
+  gs.forEach((g,i)=>{if(/^FM/.test(g.kind)){for(let j=0;j<i;j++){if(gs[j].to>g.from)gs[j].to=g.from;}}});
+  let prev={vis:null,ceil:null};
+  const out=gs.map((g,i)=>{
+    const p=parseWx(g.tok);const vis=p.vis??prev.vis,ceil=p.ceil??prev.ceil;
+    if(i===0||/^(BECMG|FM)/.test(g.kind))prev={vis,ceil};
+    return {line:(i===0?pre:"")+g.tok.join(" "),cc:colour(vis,ceil),from:g.from,to:g.to};
+  });
+  return {raw,groups:out,time:raw.split(" ").find(x=>/^\d{6}Z$/.test(x))};
+}
+function parseObs(text){
+  const out={};
+  for(let l of text.replace(/=/g,"\n").split(/\n(?=\s*(?:METAR|SPECI|TAF)\b)/)){
+    l=l.replace(/\s+/g," ").trim();if(!l)continue;
+    const m=l.match(/\b(LEBZ|LPBJ|LEMO)\b/);if(!m)continue;const id=m[1];out[id]=out[id]||{};
+    if(/^TAF\b/.test(l))out[id].taf=parseTaf(l);else if(!out[id].metar)out[id].metar=parseMetar(l);
+  }
+  return out;
+}
+
+/* ---------- NOTAM ---------- */
+const nt=s=>{if(!s||!/^\d{10}$/.test(s))return null;return new Date(Date.UTC(2000+ +s.slice(0,2),+s.slice(2,4)-1,+s.slice(4,6),+s.slice(6,8),+s.slice(8,10)));};
+function parseNotam(raw,issued){
+  const id=(raw.match(/\b([A-Z]\d{4}\/\d{2})\b/)||[])[1]||"NOTAM";
+  const ad=(raw.match(/A\)\s*([A-Z]{4})/)||[])[1];
+  const b=(raw.match(/B\)\s*(\d{10})/)||[])[1];
+  const c=raw.match(/C\)\s*(\d{10}|PERM)(\s*EST)?/)||[];
+  const d=(raw.match(/D\)\s*([\s\S]*?)(?=\s[E]\))/)||[])[1];
+  const e=(raw.match(/E\)\s*([\s\S]*?)(?=\s[FG]\)|\sCREATED:|$)/)||[])[1]||raw;
+  return {id,ad,from:nt(b),to:c[1]==="PERM"?"PERM":nt(c[1]),est:!!c[2],sched:d?d.trim():"",text:e.trim(),issued:issued||nt(b)};
+}
+function parseNotamData(txt){
+  const out={};let items=[];
+  try{
+    const j=JSON.parse(txt);const list=j.notamList||j.items||j;
+    for(const n of (Array.isArray(list)?list:[])){
+      const raw=n.icaoMessage||n.traditionalMessageFrom4thWord||n.traditionalMessage||n.text||"";
+      let iss=null;const m=String(n.issueDate||"").match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2})(\d{2})/);
+      if(m)iss=new Date(Date.UTC(+m[3],+m[1]-1,+m[2],+m[4],+m[5]));
+      const p=parseNotam(raw,iss);p.ad=p.ad||n.icaoId||n.facilityDesignator;if(n.notamNumber&&p.id==="NOTAM")p.id=n.notamNumber;
+      items.push(p);
+    }
+  }catch(e){
+    items=txt.split(/\n(?=\s*\(?[A-Z]\d{4}\/\d{2}\b)/).filter(x=>/[A-Z]\d{4}\/\d{2}/.test(x)).map(x=>parseNotam(x));
+  }
+  for(const n of items){if(n.ad&&ADS[n.ad])(out[n.ad]=out[n.ad]||[]).push(n);}
+  return out;
+}
+
+/* ---------- LPBJ: horario operativo (AIP Portugal AD 2.3) ----------
+   LUN–JUE 0830–1715, VIE 0830–1230 (hora de invierno, UTC); en verano una hora antes en UTC.
+   Sábados, domingos y festivos: solo con PPR. */
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return Date.UTC(y,mo-1,da);}
+function ptHoliday(d){
+  const y=d.getUTCFullYear(),md=p2(d.getUTCMonth()+1)+"-"+p2(d.getUTCDate());
+  if(["01-01","04-25","05-01","06-10","08-15","10-05","11-01","12-01","12-08","12-25"].includes(md))return true;
+  const e=easter(y),day=Date.UTC(y,d.getUTCMonth(),d.getUTCDate());
+  return day===e-2*24*H||day===e||day===e+60*24*H; // Viernes Santo, Pascua, Corpus Christi
+}
+function euSummer(t){const d=new Date(t),y=d.getUTCFullYear();const last=(m)=>{const x=new Date(Date.UTC(y,m+1,0));return Date.UTC(y,m,x.getUTCDate()-x.getUTCDay(),1);};return t>=last(2)&&t<last(9);}
+function lpbjOpenIntervals(from,to){
+  const res=[];for(let d=Date.UTC(new Date(from).getUTCFullYear(),new Date(from).getUTCMonth(),new Date(from).getUTCDate())-24*H;d<=to+24*H;d+=24*H){
+    const dt=new Date(d),wd=dt.getUTCDay();if(wd===0||wd===6||ptHoliday(dt))continue;
+    const sh=euSummer(d+12*H)?H:0;
+    const o=d+8.5*H-sh,c=d+(wd===5?12.5:17.25)*H-sh;res.push([o,c]);
+  }
+  return res;
+}
+function lpbjStatus(s,e){
+  const iv=lpbjOpenIntervals(s,e);const ok=iv.some(([o,c])=>o<=s&&c>=e);
+  const now=Date.now();const cur=iv.find(([o,c])=>o<=now&&c>now);
+  const next=lpbjOpenIntervals(now,now+8*24*H).find(([o])=>o>now);
+  return {ok,openNow:!!cur,cur,next};
+}
+
+/* ---------- render ---------- */
+let OBS={},NOT={},loaded=false;
+function render(){
+  const cards=$("cards"),sum=$("summary");if(!win.s)return;cards.innerHTML="";sum.innerHTML="";
+  const now=Date.now();
+  for(const id of Object.keys(ADS)){
+    const d=OBS[id]||{};const m=d.metar,t=d.taf;
+    let closed=false,ops="";
+    if(id==="LPBJ"){
+      const st=lpbjStatus(win.s,win.e);closed=!st.ok;
+      ops=`<div class="ops"><span class="pill ${st.ok?"":"no"}">${st.ok?"DISPONIBLE COMO ALTERNATIVO":"NO DISPONIBLE COMO ALTERNATIVO"}</span>
+        <span>${st.openNow?"Abierto ahora hasta "+fmtZ(new Date(st.cur[1])).slice(6):"Cerrado ahora"}${st.next&&!st.openNow?" · abre "+fmtZ(new Date(st.next[0])):""}</span>
+        <span>L–J 0830–1715 · V 0830–1230 (UTC invierno) · fines de semana y festivos solo PPR</span></div>`;
+    }
+    let age="",stale=false;
+    if(m&&m.at){const min=Math.round((now-m.at)/60000);stale=min>90;age="hace "+(min<120?min+" min":Math.round(min/60)+" h");}
+    let worst=null;
+    const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(hit&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}">${esc(g.line)}</span>`;}).join(""):"";
+    const notams=(NOT[id]||[]).filter(n=>n.issued&&now-n.issued<=24*H&&now-n.issued>=-H).sort((a,b)=>b.issued-a.issued);
+    const notamsHtml=notams.map(n=>{
+      const end=n.to==="PERM"?Infinity:n.to?+n.to:Infinity;const hit=n.from?overlap(win.s,win.e,+n.from,end):false;
+      const h=Math.max(0,Math.round((now-n.issued)/H));
+      return `<div class="notam ${hit?"hit":""}"><div class="notam-h"><b>${esc(n.id)}</b>${hit?'<span class="tag aff">AFECTA AL VUELO</span>':''}${h<6?'<span class="tag new">NUEVO</span>':''}<span>${fmtZ(n.from)} → ${fmtZ(n.to)}${n.est?" EST":""}</span>${n.sched?`<span>${esc(n.sched)}</span>`:""}<span>hace ${h} h</span></div><p>${esc(n.text)}</p></div>`;}).join("");
+    const nHit=notams.filter(n=>n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to)).length;
+    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":""}" href="#ad-${id}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR">${m?m.cc:"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF en ventana">${worst||"—"}</span></a>`);
+    const el=document.createElement("article");el.className="ad"+(closed?" closed":"");el.id="ad-"+id;
+    el.innerHTML=`<div class="ad-head"><div class="ad-id"><b>${id}</b><span>${ADS[id]}</span></div>
+      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}"><small>METAR</small>${m?m.cc:"—"}</div><div class="cc ${worst?"c-"+worst:""}"><small>TAF</small>${worst||"—"}</div></div></div>${ops}
+      <div class="ad-body">
+        <div class="sec"><div class="sec-h"><span class="label">METAR</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
+          ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
+        <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age">resaltado = ventana de vuelo</span></div>
+          ${t?`<pre class="raw taf-raw">${tafLines}</pre>`:`<p class="empty">${loaded?"Sin TAF disponible.":"Cargando…"}</p>`}</div>
+        <div class="sec"><div class="sec-h"><span class="label">NOTAM de aeródromo · últimas 24 h</span><span class="age">${notams.length} reciente${notams.length===1?"":"s"}${nHit?` · ${nHit} afecta${nHit===1?"":"n"} al vuelo`:""}</span></div>
+          ${notams.length?`<div class="notams">${notamsHtml}</div>`:`<p class="empty">${loaded?"Ningún NOTAM publicado en las últimas 24 h.":"Cargando…"}</p>`}</div>
+      </div>`;
+    cards.appendChild(el);
+  }
+}
+
+/* ---------- carga de datos (archivos del repositorio, actualizados por GitHub Actions) ---------- */
+async function load(){
+  const get=u=>fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()});
+  const res=await Promise.allSettled([get("data/metar.txt"),get("data/taf.txt"),get("data/notam.json")]);
+  const ok=res.filter(r=>r.status==="fulfilled").length;
+  if(res[0].status==="fulfilled"||res[1].status==="fulfilled"){
+    const m=res[0].value||"",t=res[1].value||"";
+    OBS=parseObs(m.split("\n").map(l=>l.trim()&&!/^(METAR|SPECI)/.test(l)?"METAR "+l:l).join("\n")+"\n"+t.replace(/\r/g,"").split(/\n(?=TAF|[A-Z]{4} \d{6}Z)/).map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l).join("\n"));
+  }
+  if(res[2].status==="fulfilled")NOT=parseNotamData(res[2].value);
+  loaded=true;
+  const b=$("liveBadge");
+  if(ok){b.className="livebadge ok";b.lastChild.textContent=" En vivo · "+new Date().toISOString().slice(11,16)+"Z";$("offline").hidden=true;}
+  else{b.className="livebadge err";b.lastChild.textContent=" Sin datos en vivo";$("offline").hidden=false;}
+  render();
+}
+
+/* ---------- mapa significativo: se muestra si existe data/swc.png en el repositorio ---------- */
+function loadSwc(){const im=$("swcImg");im.onload=()=>{im.hidden=false;$("swcMsg").hidden=true;$("swcAge").textContent="cargado "+new Date().toISOString().slice(11,16)+"Z";};im.onerror=()=>{im.hidden=true;$("swcMsg").hidden=false;};im.src="data/swc.png?_="+Math.floor(Date.now()/600000);}
+
+/* ---------- satélite (EUMETSAT WMS) ---------- */
+const BBOX="35.5,-10,41,-3";
+const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
+let satMode="ir";
+const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+BBOX+"&width=800&height=629&_="+Math.floor(Date.now()/600000);
+function refreshSat(){
+  const im=$("satLive"),msg=$("satMsg");let i=0;const list=LAYERS[satMode];
+  im.onload=()=>{msg.hidden=true;$("satAge").textContent="cargada "+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
+  im.onerror=()=>{i++;if(i<list.length){im.src=satUrl(list[i]);}else{msg.hidden=false;msg.innerHTML='No se ha podido cargar la imagen.<br>Ábrela en EUMETSAT View.';$("satAge").textContent="";}};
+  im.src=satUrl(list[0]);
+  const c=$("satCoast");c.onerror=()=>{c.hidden=true;};c.src=satUrl("backgrounds:ne_10m_coastline");
+}
+$("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";$("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo";refreshSat();});
+
+/* ---------- arranque ---------- */
+$("legend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${n}</span><span>${n==="RED"?"&lt;800 m o &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
+function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
+tick();setInterval(tick,1000);
+buildSelects();load();refreshSat();loadSwc();
+setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSwc,600000);setInterval(render,60000);
+</script>
+
+</body>
+</html>
