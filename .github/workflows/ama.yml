@@ -1,0 +1,37 @@
+name: Mapa significativo baja cota (AMA)
+
+on:
+  schedule:
+    - cron: "5,35 * * * *"
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: "Registro detallado"
+        default: "1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: metar
+  cancel-in-progress: false
+
+jobs:
+  swc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q requests
+      - name: Descargar mapa
+        env:
+          AMA_USER: ${{ secrets.AMA_USER }}
+          AMA_PASS: ${{ secrets.AMA_PASS }}
+          AMA_DEBUG: ${{ github.event.inputs.debug }}
+        run: python3 scripts/ama_swc.py
+      - name: Guardar cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull -q --rebase origin main || true
+          git add data/swc.png 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "Mapa baja cota $(date -u +%d%H%MZ)" && git push)
