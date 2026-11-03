@@ -384,7 +384,7 @@ function render(){
 /* ---------- carga de datos (archivos del repositorio, actualizados por GitHub Actions) ---------- */
 async function load(){
   const get=u=>fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()});
-  const res=await Promise.allSettled([get("data/metar.txt"),get("data/taf.txt"),get("data/notam.json")]);
+  const res=await Promise.allSettled([get("data/metar.txt"),get("data/taf.txt"),get("data/notam.txt").catch(()=>get("data/notam.json"))]);
   const ok=res.filter(r=>r.status==="fulfilled").length;
   if(res[0].status==="fulfilled"||res[1].status==="fulfilled"){
     const m=res[0].value||"",t=res[1].value||"";
