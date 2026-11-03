@@ -32,9 +32,16 @@ jobs:
           keep data/taf.txt
 
           # NOTAM de los tres aeródromos (buscador público de la FAA)
-          curl -fsS -A "$UA" -X POST "https://notams.aim.faa.gov/notamSearch/search" \
-            -d "searchType=0&designatorsForLocation=$IDS&offset=0&notamsOnly=false&notamType=N&notamType=R&notamType=C" \
-            -o data/notam.json.tmp || true
+          BUA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+          curl -sS -c /tmp/faa.cj -A "$BUA" "https://notams.aim.faa.gov/notamSearch/nsapp.html" -o /dev/null || true
+          curl -sS -b /tmp/faa.cj -A "$BUA" -X POST "https://notams.aim.faa.gov/notamSearch/search" \
+            -H "Referer: https://notams.aim.faa.gov/notamSearch/nsapp.html" \
+            -H "Origin: https://notams.aim.faa.gov" \
+            -H "Accept: application/json, text/javascript, */*; q=0.01" \
+            -H "X-Requested-With: XMLHttpRequest" \
+            --data "searchType=0&designatorsForLocation=$IDS&designatorForAccountable=&latDegrees=&latMinutes=0&latSeconds=0&longDegrees=&longMinutes=0&longSeconds=0&radius=10&sortColumns=5+false&sortDirection=true&designatorForNotamNumberSearch=&notamNumber=&radiusSearchOnDesignator=false&radiusSearchDesignator=&latitudeDirection=N&longitudeDirection=W&freeFormText=&flightPathText=&flightPathDivertAirfields=&flightPathBuffer=4&flightPathIncludeNavaids=true&flightPathIncludeArtcc=false&flightPathIncludeTfr=true&flightPathIncludeRegulatory=false&flightPathResultsType=All+NOTAMs&archiveDate=&archiveDesignator=&offset=0&notamsOnly=false&filters=&minRunwayLength=&minRunwayWidth=&runwaySurfaceTypes=&predefinedAbraka=&predefinedDabra=&flightPathAddlBuffer=&recaptchaToken=" \
+            -w "\nHTTP %{http_code}\n" -o data/notam.json.tmp || true
+          head -c 300 data/notam.json.tmp || true
           if jq -e '.notamList' data/notam.json.tmp >/dev/null 2>&1; then keep data/notam.json; else rm -f data/notam.json.tmp; fi
 
           ls -la data
