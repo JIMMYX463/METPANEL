@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Panel Meteo LEBZ · LPBJ · LEMO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -368,12 +371,13 @@ html{scroll-behavior:smooth}
           <tr><td>METAR y TAF</td><td>cada 10 min</td></tr>
           <tr><td>NOTAM</td><td>cada 30 min</td></tr>
           <tr><td>Satélite</td><td>cada 10 min</td></tr>
-          <tr><td>Significativo y colores OTAN</td><td>cada hora</td></tr>
+          <tr><td>Colores OTAN</td><td>cada 30 min</td></tr>
+          <tr><td>Significativo</td><td>cada hora</td></tr>
         </tbody></table>
         <ul class="hl">
           <li><span class="livebadge ok"><i></i> En vivo</span> indica que los datos llegan bien. En rojo, no se han podido cargar.</li>
           <li>Un METAR con más de 90 min aparece en <b style="color:var(--warn)">rojo · desactualizado</b>.</li>
-          <li>Si no ves un cambio, recarga la página.</li>
+          <li>Al <b>entrar, recargar o volver</b> a la página se carga siempre la última versión con los datos más recientes. Mientras la tienes abierta se refresca sola.</li>
         </ul>
       </section>
 
@@ -735,10 +739,24 @@ $("helpClose").addEventListener("click",closeHelp);
 $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
+/* ---------- versión siempre al día y datos frescos al entrar ---------- */
+const BUILD="202611032055";
+async function checkVersion(){
+  try{
+    const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
+    const m=t.match(/const BUILD="(\d+)"/);
+    if(m&&m[1]!==BUILD){const u=new URL(location.href);if(u.searchParams.get("v")!==m[1]){u.searchParams.set("v",m[1]);location.replace(u.toString());}}
+  }catch(e){}
+}
+function refreshAll(){load();refreshSat();loadSig();loadCol();}
+let hiddenAt=0;
+document.addEventListener("visibilitychange",()=>{if(document.hidden)hiddenAt=Date.now();else if(Date.now()-hiddenAt>60000){checkVersion();refreshAll();}});
+window.addEventListener("pageshow",e=>{if(e.persisted){checkVersion();refreshAll();}});
+
 /* ---------- arranque ---------- */
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
 tick();setInterval(tick,1000);
-initWin();load();refreshSat();loadSig();loadCol();loadStations();
+checkVersion();initWin();load();refreshSat();loadSig();loadCol();loadStations();
 setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSig,600000);setInterval(loadCol,600000);setInterval(render,60000);
 </script>
 

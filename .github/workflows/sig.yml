@@ -3,6 +3,7 @@ name: Mapa significativo (Telegram)
 on:
   schedule:
     - cron: "17 * * * *"
+    - cron: "47 * * * *"
   workflow_dispatch:
     inputs:
       modo:
@@ -33,6 +34,7 @@ jobs:
           TG_PHONE: ${{ secrets.TG_PHONE }}
           TG_2FA: ${{ secrets.TG_2FA }}
           GH_TOKEN: ${{ github.token }}
+          SOLO_COLORES: ${{ github.event.schedule == '47 * * * *' && '1' || '' }}
         run: python3 scripts/tg_sig.py "${{ github.event.inputs.modo || 'fetch' }}"
       - name: Guardar cambios
         run: |

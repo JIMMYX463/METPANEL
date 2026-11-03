@@ -106,7 +106,7 @@ async def fetch():
     bot = await client.get_entity(BOT)
     meta_path = pathlib.Path("data/sig.json")
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
-    for hh in HOURS:
+    for hh in ([] if os.environ.get("SOLO_COLORES") == "1" else HOURS):
         got = await ask(client, bot, f"/sig {hh} ibe")
         if not got:
             continue
