@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Panel Meteo LEBZ · LPBJ · LEMO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: monitor = barra superior + tres columnas por aeródromo (METAR, TAF, NOTAM) + franja inferior; tablet = tarjetas a ancho completo con METAR|TAF en dos columnas; móvil = una columna con selector de aeródromo fijo */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d3dae2; --accent:#1f5fa8; --field:#f6f8fa;
+  --blu:#2f6fd6; --wht:#e9edf1; --grn:#2e9a4a; --ylo:#e7c21b; --amb:#ee8a12; --red:#d0312d; --dark:#18212b; --off:#7b8794; --warn:#d0312d;
+  --display:"Archivo",system-ui,sans-serif; --body:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1319;--panel:#161f29;--ink:#e6ebf0;--muted:#93a1b0;--line:#283441;--accent:#6aa5ec;--field:#0f171f;--wht:#d9dee4;--off:#5f6c79;--warn:#ff6b63;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1319;--panel:#161f29;--ink:#e6ebf0;--muted:#93a1b0;--line:#283441;--accent:#6aa5ec;--field:#0f171f;--wht:#d9dee4;--off:#5f6c79;--warn:#ff6b63;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.top-in{max-width:1800px;margin:0 auto;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+h1{font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.5rem;margin:0;line-height:1.1}
+h1 small{display:block;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-stretch:100%}
+.summary{display:flex;gap:8px;flex-wrap:wrap}
+.sum{display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);font:700 .85rem var(--mono);border:1px solid var(--line);border-radius:4px;padding:4px 6px 4px 8px}
+.sum .chip{font-size:.7rem}
+.clock{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;line-height:1.2}
+.clock b{font-size:1.35rem;display:block}
+.clock span{color:var(--muted);font-size:.75rem}
+.wrap{max-width:1800px;margin:0 auto;padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+.label{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.ad{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:grid;min-width:0;scroll-margin-top:90px}
+.ad-head{display:flex;justify-content:space-between;align-items:stretch;border-bottom:1px solid var(--line)}
+.ad-id{padding:10px 14px;min-width:0}
+.ad-id b{font-family:var(--display);font-stretch:78%;font-size:1.8rem;font-weight:800;display:block;line-height:1}
+.ad-id span{font-size:.82rem;color:var(--muted)}
+.ccs{display:flex}
+.cc{min-width:78px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.45rem;background:var(--off);color:#fff;padding:4px 10px;line-height:1.1}
+.cc small{font-family:var(--body);font-stretch:100%;font-size:.6rem;letter-spacing:.1em;font-weight:700;opacity:.85}
+.c-BLU{background:var(--blu)!important;color:#fff!important}.c-WHT{background:var(--wht)!important;color:var(--dark)!important}.c-GRN{background:var(--grn)!important;color:#fff!important}.c-YLO{background:var(--ylo)!important;color:var(--dark)!important}.c-AMB{background:var(--amb)!important;color:var(--dark)!important}.c-RED{background:var(--red)!important;color:#fff!important}
+.ad-body{display:grid;grid-template-columns:1fr;min-width:0}
+.sec{padding:12px 14px;display:grid;gap:10px;min-width:0;border-bottom:1px solid var(--line);align-content:start}
+.sec:last-child{border-bottom:0}
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.kv div{background:var(--field);border-radius:4px;padding:5px 8px;min-width:0}
+.kv b{display:block;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.92rem;overflow-wrap:anywhere}
+.raw{font-family:var(--mono);font-size:.78rem;background:var(--field);border-radius:4px;padding:8px;overflow-wrap:anywhere;white-space:pre-wrap;margin:0}
+.age{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
+.age.stale{color:var(--warn);font-weight:700}
+.raw.big{font-size:.9rem;line-height:1.55}
+.raw[class*="bar-"]{border-left:6px solid var(--off)}
+.taf-raw{display:grid;gap:3px;padding:6px}
+.tl{display:block;padding:3px 8px;border-left:6px solid var(--off);border-radius:2px}
+.bar-BLU{border-left-color:var(--blu)!important}.bar-WHT{border-left-color:var(--wht)!important;box-shadow:inset 1px 0 0 var(--line)}.bar-GRN{border-left-color:var(--grn)!important}.bar-YLO{border-left-color:var(--ylo)!important}.bar-AMB{border-left-color:var(--amb)!important}.bar-RED{border-left-color:var(--red)!important}
+.sat{display:grid;gap:10px}
+.sat-frame{background:var(--field);border:1px dashed var(--line);border-radius:4px;min-height:220px;display:grid;place-items:center;overflow:hidden;cursor:pointer;position:relative}
+.sat-frame.drag{border-color:var(--accent)}
+.sat-frame img{width:100%;height:auto;display:block}
+.sat-frame p{color:var(--muted);font-size:.86rem;text-align:center;padding:16px;margin:0}
+.chip{font-family:var(--mono);font-size:.74rem;font-weight:600;padding:3px 7px;border-radius:3px;background:var(--off);color:#fff;text-align:center;min-width:34px}
+.empty{color:var(--muted);font-size:.86rem;margin:0}
+.notams{display:grid;gap:8px}
+.notam{border-left:3px solid var(--accent);background:var(--field);border-radius:0 4px 4px 0;padding:7px 9px;display:grid;gap:4px;min-width:0}
+.notam-h{display:flex;flex-wrap:wrap;gap:4px 10px;font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.notam-h b{color:var(--ink)}
+.notam p{margin:0;font-family:var(--mono);font-size:.78rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.new{background:var(--accent);color:var(--panel);border-radius:3px;padding:0 5px;font-weight:700}
+.bottom{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1.1fr) minmax(0,1fr);gap:14px;align-items:start}
+.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.legend div{display:flex;align-items:center;gap:8px;font-size:.78rem;background:var(--field);border-radius:4px;padding:4px}
+.legend span{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+textarea{width:100%;box-sizing:border-box;min-height:150px;font-family:var(--mono);font-size:.8rem;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:10px;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:600 .88rem var(--body);padding:9px 14px;border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.links{display:grid;gap:6px}
+.links a{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;color:var(--ink);text-decoration:none;font-size:.88rem}
+.links a span{color:var(--muted);font-size:.78rem}
+.links a:hover{border-color:var(--accent)}
+.note{font-size:.8rem;color:var(--muted);margin:0}
+.badge{font-size:.62rem;font-weight:700;letter-spacing:.1em;background:var(--amb);color:var(--dark);border-radius:3px;padding:2px 6px;margin-left:6px;vertical-align:middle;font-stretch:100%}
+
+/* Monitor grande: textos algo mayores */
+@media (min-width:1600px){body{font-size:16px}.raw,.notam p{font-size:.82rem}}
+/* Tablet: tarjetas a ancho completo, METAR | TAF lado a lado, NOTAM debajo */
+@media (max-width:1199px){
+  .grid{grid-template-columns:1fr}
+  .ad-body{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .ad-body .sec:nth-child(1){border-right:1px solid var(--line)}
+  .ad-body .sec:nth-child(3){grid-column:1/-1}
+  .bottom{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .bottom .sat{grid-column:1/-1}
+}
+/* Móvil: una columna */
+@media (max-width:700px){
+  .ad-body{grid-template-columns:1fr}
+  .ad-body .sec:nth-child(1){border-right:0}
+  .bottom{grid-template-columns:1fr}
+  .clock span{display:none}
+  h1{font-size:1.25rem}
+  .top-in{gap:8px}
+  .summary{order:3;width:100%}
+  .sum{flex:1;justify-content:center}
+  .cc{min-width:64px;font-size:1.25rem}
+  .kv{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .legend{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+.live{position:relative;background:#000;border-radius:4px;overflow:hidden;aspect-ratio:800/629;max-width:100%}
+.live img{position:absolute;inset:0;width:100%;height:100%}
+.mk{position:absolute;transform:translate(-50%,-130%);font:700 .7rem var(--mono);color:#fff;background:rgba(208,49,45,.9);padding:1px 5px;border-radius:3px;white-space:nowrap}
+.mk::after{content:"";position:absolute;left:50%;top:calc(100% + 4px);width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 2px #fff}
+.livebadge{display:inline-flex;align-items:center;gap:6px;font:600 .75rem var(--mono);color:var(--muted)}
+.livebadge i{width:8px;height:8px;border-radius:50%;background:var(--off)}
+.livebadge.ok i{background:var(--grn)}.livebadge.err i{background:var(--red)}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="top-in">
+  <h1><small>Meteorología aeronáutica</small>LEBZ · LPBJ · LEMO</h1>
+  <nav class="summary" id="summary" aria-label="Resumen por aeródromo"></nav>
+  <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Hora local --</span></div>
+</div></div>
+
+<div class="wrap">
+  <section class="grid" id="cards" aria-label="Aeródromos"></section>
+
+  <section class="bottom">
+    <div class="box sat" id="satBox">
+      <div class="sec-h"><span class="label">Imagen satélite</span><span class="age" id="satAge"></span></div>
+      <div class="live" id="live"><img id="satLive" alt="Imagen satélite Meteosat IR 10.8 del suroeste peninsular"><img id="satCoast" alt="" aria-hidden="true"><span class="mk" style="left:45.4%;top:38.4%">LEBZ</span><span class="mk" style="left:29.6%;top:53.1%">LPBJ</span><span class="mk" style="left:62.6%;top:69.6%">LEMO</span></div>
+      <div class="sat-frame" id="satFrame" tabindex="0" role="button" aria-label="Añadir imagen satélite" hidden><p>Pega (Ctrl+V), arrastra o toca para elegir la imagen satélite.<br>Se guarda en este dispositivo.</p></div>
+      <input type="file" id="satFile" accept="image/*" hidden>
+      <div class="row"><button type="button" id="satMode" class="ghost">Usar imagen propia</button><button type="button" id="satPick" class="ghost" hidden>Cambiar imagen</button><button type="button" id="satDel" class="ghost">Quitar</button></div>
+    </div>
+    <div class="box input" style="display:grid;gap:10px">
+      <div class="label">NOTAM y datos manuales</div>
+      <p class="note" id="liveNote">METAR y TAF se descargan solos cada 5 minutos. Pega aquí los NOTAM (y, si falla la descarga, también METAR y TAF). Lo pegado se guarda en este navegador.</p>
+      <textarea id="input" spellcheck="false" aria-label="Texto METAR, TAF y NOTAM"></textarea>
+      <div class="row">
+        <button id="apply" type="button">Actualizar panel</button>
+        <button id="clear" type="button" class="ghost">Vaciar</button>
+        <span class="note" id="status"></span>
+      </div>
+    </div>
+    <div class="box" style="display:grid;gap:10px">
+      <div class="label">Código de colores OTAN</div>
+      <div class="legend" id="legend"></div>
+      <p class="note">Se aplica el peor de visibilidad y techo (BKN, OVC o VV). En el TAF, el color de cabecera es el peor de todos los tramos.</p>
+      <div class="label" style="margin-top:6px">Fuentes oficiales</div>
+      <div class="links">
+        <a href="https://www.aemet.es/es/eltiempo/observacion/satelite" target="_blank" rel="noopener">Satélite AEMET <span>Meteosat ↗</span></a>
+        <a href="https://view.eumetsat.int/productviewer?v=default" target="_blank" rel="noopener">EUMETSAT View <span>IR / visible ↗</span></a>
+        <a href="https://ama.aemet.es/" target="_blank" rel="noopener">AEMET Aviación <span>METAR/TAF ↗</span></a>
+        <a href="https://aviationweather.gov/data/metar/?ids=LEBZ+LPBJ+LEMO&taf=1" target="_blank" rel="noopener">AviationWeather.gov <span>METAR/TAF ↗</span></a>
+        <a href="https://notampib.enaire.es/" target="_blank" rel="noopener">ENAIRE NOTAM <span>LEBZ · LEMO ↗</span></a>
+        <a href="https://ops.nav.pt/" target="_blank" rel="noopener">NAV Portugal NOTAM <span>LPBJ ↗</span></a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const ADS={LEBZ:"Badajoz / Talavera la Real",LPBJ:"Beja (BA11)",LEMO:"Morón (Sevilla)"};
+const STATES=[["BLU",8000,2500],["WHT",5000,1500],["GRN",3700,700],["YLO",1600,300],["AMB",800,200],["RED",0,0]];
+const RANK=Object.fromEntries(STATES.map((s,i)=>[s[0],i]));
+function exampleText(){
+  const n=new Date(),p=x=>String(x).padStart(2,"0");
+  const dd=p(n.getUTCDate()),hh=p(n.getUTCHours()),yy=p(n.getUTCFullYear()%100),mm=p(n.getUTCMonth()+1);
+  const ago=h=>{const d=new Date(n-h*3600000);return yy+p(d.getUTCMonth()+1)+p(d.getUTCDate())+p(d.getUTCHours())+"00";};
+  const later=h=>{const d=new Date(+n+h*3600000);return yy+p(d.getUTCMonth()+1)+p(d.getUTCDate())+p(d.getUTCHours())+"00";};
+  return `METAR LEBZ ${dd}${hh}00Z 26008KT 9999 SCT030 BKN060 17/09 Q1021
+TAF LEBZ ${dd}0500Z ${dd}06/${dd}24 25008KT 9999 SCT030 TEMPO ${dd}12/${dd}18 6000 SHRA BKN025 BECMG ${dd}20/${dd}22 4000 BR BKN012
+METAR LPBJ ${dd}${hh}00Z 23010KT 8000 FEW020 BKN040 18/11 Q1020
+TAF LPBJ ${dd}0500Z ${dd}06/${dd}24 24010KT 9999 FEW020 PROB30 ${dd}14/${dd}18 5000 RA BKN015
+METAR LEMO ${dd}${hh}00Z 22006KT 4500 BR BKN008 15/13 Q1022
+TAF LEMO ${dd}0500Z ${dd}06/${dd}24 22006KT 5000 BR BKN010 BECMG ${dd}10/${dd}12 9999 SCT025
+B1234/${yy} NOTAMN
+A) LEBZ B) ${ago(3)} C) ${later(48)} EST
+E) TWY B CLSD DUE TO WIP.
+B1229/${yy} NOTAMN
+A) LEBZ B) ${ago(30)} C) ${later(100)}
+E) ILS RWY 31 NOT AVBL.
+A2210/${yy} NOTAMN
+A) LPBJ B) ${ago(6)} C) ${later(12)}
+E) AD HOURS OF SER EXTENDED TIL 2200.
+B1240/${yy} NOTAMN
+A) LEMO B) ${ago(1)} C) ${later(6)}
+E) RWY 02/20 PAPI U/S.`;
+}
+
+const $=id=>document.getElementById(id);
+const store={get(){try{return localStorage.getItem("meteo-panel")}catch(e){return null}},set(v){try{localStorage.setItem("meteo-panel",v)}catch(e){}}};
+
+function parseWx(tok){
+  let vis=null,ceil=null,cavok=false;
+  for(const t of tok){
+    if(t==="CAVOK"){cavok=true;vis=10000;}
+    else if(/^\d{4}$/.test(t)&&vis===null){vis=t==="9999"?10000:+t;}
+    else if(/^\d{1,2}SM$/.test(t)){vis=Math.round(parseInt(t)*1609);}
+    else if(/^(BKN|OVC)\d{3}/.test(t)){const h=+t.slice(3,6)*100;if(ceil===null||h<ceil)ceil=h;}
+    else if(/^VV\d{3}/.test(t)){const h=+t.slice(2,5)*100;if(ceil===null||h<ceil)ceil=h;}
+    else if(/^(NSC|SKC|CLR|NCD)$/.test(t)){ceil=ceil??99999;}
+  }
+  if(ceil===null&&(cavok||tok.some(t=>/^(FEW|SCT)\d{3}/.test(t))))ceil=99999;
+  return {vis,ceil};
+}
+function colour(vis,ceil){
+  const v=vis??10000,c=ceil??99999;
+  for(const [n,mv,mc] of STATES){if(v>=mv&&c>=mc)return n;}
+  return "RED";
+}
+function parseMetar(s){
+  const tok=s.split(" ");const r={raw:s};
+  r.time=tok.find(x=>/^\d{6}Z$/.test(x));
+  r.wind=tok.find(x=>/^(\d{3}|VRB)\d{2,3}(G\d{2,3})?(KT|MPS)$/.test(x))||"—";
+  const tt=tok.find(x=>/^M?\d{2}\/M?\d{2}$/.test(x));r.temp=tt?tt.replace(/M/g,"-"):"—";
+  const q=tok.find(x=>/^Q\d{4}$/.test(x));r.qnh=q?q.slice(1):"—";
+  Object.assign(r,parseWx(tok));r.cc=colour(r.vis,r.ceil);
+  return r;
+}
+function parseTaf(raw){
+  const pre=(raw.match(/^TAF( AMD| COR)? \w{4} \d{6}Z /)||[""])[0];
+  const body=raw.slice(pre.length);
+  const tok=body.split(" ");const groups=[];let cur={label:"BASE",tok:[]};
+  for(let i=0;i<tok.length;i++){
+    const t=tok[i];
+    if((/^(BECMG|TEMPO|FM\d{6})$/.test(t)||/^PROB\d{2}$/.test(t))&&!(t==="TEMPO"&&/^PROB/.test(tok[i-1]||""))){
+      groups.push(cur);cur={label:t,tok:[t]};
+    } else cur.tok.push(t);
+  }
+  groups.push(cur);
+  let prev={vis:null,ceil:null};
+  const gs=groups.filter(g=>g.tok.length).map((g,i)=>{
+    const p=parseWx(g.tok);
+    const vis=p.vis??prev.vis,ceil=p.ceil??prev.ceil;
+    if(i===0||/^(BECMG|FM)/.test(g.label))prev={vis,ceil};
+    return {line:(i===0?pre:"")+g.tok.join(" "),cc:colour(vis,ceil)};
+  });
+  const worst=gs.reduce((w,g)=>RANK[g.cc]>RANK[w]?g.cc:w,"BLU");
+  return {raw,groups:gs,worst,time:raw.split(" ").find(x=>/^\d{6}Z$/.test(x))};
+}
+const nt=s=>{if(!s||!/^\d{10}$/.test(s))return null;return new Date(Date.UTC(2000+ +s.slice(0,2),+s.slice(2,4)-1,+s.slice(4,6),+s.slice(6,8),+s.slice(8,10)));};
+function parseNotam(raw){
+  const id=(raw.match(/\b([A-Z]\d{4}\/\d{2})\b/)||[])[1]||"NOTAM";
+  const ad=(raw.match(/A\)\s*([A-Z]{4})/)||[])[1];
+  const b=(raw.match(/B\)\s*(\d{10})/)||[])[1];
+  const c=(raw.match(/C\)\s*(\d{10}|PERM)(\s*EST)?/)||[]);
+  const cr=(raw.match(/CREATED:\s*(\d{2}) (\w{3}) (\d{4}) (\d{2}):(\d{2})/)||null);
+  let created=null;
+  if(cr){const M={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11}[cr[2].toUpperCase()];if(M!=null)created=new Date(Date.UTC(+cr[3],M,+cr[1],+cr[4],+cr[5]));}
+  const e=(raw.match(/E\)\s*([\s\S]*?)(?=\s[FG]\)|\sCREATED:|$)/)||[])[1]||raw;
+  return {id,ad,from:nt(b),to:c[1]==="PERM"?"PERM":nt(c[1]),est:!!c[2],created,text:e.trim(),ref:created||nt(b)};
+}
+function parseAll(text){
+  const out={};
+  const blocks=text.replace(/=/g,"\n").split(/\n(?=\s*(?:METAR|SPECI|TAF\b|\(?[A-Z]\d{4}\/\d{2}\b))/);
+  for(let raw of blocks){
+    const flat=raw.replace(/\s+/g," ").trim();if(!flat)continue;
+    if(/^\(?[A-Z]\d{4}\/\d{2}\b/.test(flat)){
+      const n=parseNotam(raw.replace(/^\s*\(/,"").replace(/\)\s*$/,""));
+      if(n.ad&&ADS[n.ad]){(out[n.ad]=out[n.ad]||{notams:[]}).notams=(out[n.ad].notams||[]).concat(n);}
+      continue;
+    }
+    const m=flat.match(/\b(LEBZ|LPBJ|LEMO)\b/);if(!m)continue;
+    const id=m[1];out[id]=out[id]||{notams:[]};
+    if(/^TAF\b/.test(flat))out[id].taf=parseTaf(flat);
+    else out[id].metar=parseMetar(flat);
+  }
+  return out;
+}
+function obsDate(t){
+  if(!t)return null;const n=new Date();const d=+t.slice(0,2),h=+t.slice(2,4),m=+t.slice(4,6);
+  let dt=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),d,h,m));
+  if(dt-n>86400000)dt=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth()-1,d,h,m));
+  return dt;
+}
+const ageTxt=min=>min<120?min+" min":Math.round(min/60)+" h";
+const fmtVis=v=>v==null?"—":v>=10000?"≥10 km":v+" m";
+const fmtCeil=c=>c==null||c>=99999?"Sin techo":c+" ft";
+const fmtN=d=>d==="PERM"?"PERM":d?String(d.getUTCDate()).padStart(2,"0")+"/"+String(d.getUTCMonth()+1).padStart(2,"0")+" "+d.toISOString().slice(11,16)+"Z":"—";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let data={},isExample=false;
+function render(){
+  const cards=$("cards"),sum=$("summary");cards.innerHTML="";sum.innerHTML="";
+  const now=Date.now();
+  for(const id of Object.keys(ADS)){
+    const d=data[id]||{notams:[]};const m=d.metar,t=d.taf;
+    let age="",stale=false;
+    if(m&&m.time){const min=Math.round((now-obsDate(m.time))/60000);stale=min>90;age=min>=0?"hace "+ageTxt(min):"";}
+    const recent=(d.notams||[]).filter(n=>n.ref&&now-n.ref<=86400000&&now-n.ref>=-3600000).sort((a,b)=>b.ref-a.ref);
+    const hidden=(d.notams||[]).length-recent.length;
+    sum.insertAdjacentHTML("beforeend",`<a class="sum" href="#ad-${id}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR">${m?m.cc:"—"}</span><span class="chip ${t?"c-"+t.worst:""}" title="TAF">${t?t.worst:"—"}</span></a>`);
+    const el=document.createElement("article");el.className="ad";el.id="ad-"+id;
+    el.innerHTML=`<div class="ad-head"><div class="ad-id"><b>${id}${isExample?'<span class="badge">EJEMPLO</span>':''}</b><span>${ADS[id]}</span></div>
+      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}"><small>METAR</small>${m?m.cc:"—"}</div><div class="cc ${t?"c-"+t.worst:""}" style="border-left:1px solid var(--panel)"><small>TAF</small>${t?t.worst:"—"}</div></div></div>
+      <div class="ad-body">
+        <div class="sec"><div class="sec-h"><span class="label">METAR ${m&&m.time?m.time:""}</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
+          ${m?`<pre class="raw big bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">Sin METAR. Pégalo abajo.</p>`}
+        </div>
+        <div class="sec"><div class="sec-h"><span class="label">TAF ${t&&t.time?t.time:""}</span><span class="age">línea = tramo · borde = color</span></div>
+          ${t?`<pre class="raw big taf-raw">${t.groups.map(g=>`<span class="tl bar-${g.cc}">${esc(g.line)}</span>`).join("")}</pre>`:`<p class="empty">Sin TAF.</p>`}
+        </div>
+        <div class="sec"><div class="sec-h"><span class="label">NOTAM de aeródromo · últimas 24 h</span><span class="age">${recent.length} reciente${recent.length===1?"":"s"}${hidden>0?` · ${hidden} más antiguo${hidden===1?"":"s"} ocultos`:""}</span></div>
+          ${recent.length?`<div class="notams">${recent.map(n=>{const h=Math.max(0,Math.round((now-n.ref)/3600000));return `<div class="notam"><div class="notam-h"><b>${esc(n.id)}</b>${h<6?'<span class="new">NUEVO</span>':''}<span>${fmtN(n.from)} → ${fmtN(n.to)}${n.est?" EST":""}</span><span>hace ${h} h</span></div><p>${esc(n.text)}</p></div>`;}).join("")}</div>`:`<p class="empty">Ningún NOTAM publicado en las últimas 24 h.</p>`}
+        </div>
+      </div>`;
+    cards.appendChild(el);
+  }
+}
+function legend(){
+  $("legend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${n}</span><span>${n==="RED"?"&lt;800 m o &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
+}
+function tick(){
+  const n=new Date();
+  $("utc").textContent=n.toISOString().slice(11,19)+" Z";
+  $("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});
+}
+function apply(text,ex){
+  data=parseAll(text);isExample=ex;render();
+  const n=Object.keys(data).length;
+  $("status").textContent=ex?"Mostrando datos de ejemplo.":n?`Actualizado: ${n} aeródromo${n>1?"s":""}.`:"No he encontrado LEBZ, LPBJ ni LEMO en el texto.";
+}
+$("apply").addEventListener("click",()=>{store.set($("input").value);fetchLive();});
+$("clear").addEventListener("click",()=>{$("input").value="";store.set("");fetchLive();$("status").textContent="Datos manuales borrados.";});
+// Imagen satélite: se reduce a JPEG y se guarda en este navegador
+const SATK="meteo-panel-sat";
+function showSat(){
+  let s=null;try{s=JSON.parse(localStorage.getItem(SATK)||"null")}catch(e){}
+  const f=$("satFrame");
+  if(s&&s.img){f.innerHTML="";const im=new Image();im.alt="Imagen satélite";im.src=s.img;f.appendChild(im);
+    const min=Math.round((Date.now()-s.t)/60000);$("satAge").textContent="añadida hace "+ageTxt(min);$("satAge").className="age"+(min>90?" stale":"");}
+  else{f.innerHTML='<p>Pega (Ctrl+V), arrastra o toca para elegir la imagen satélite.<br>Se guarda en este dispositivo.</p>';$("satAge").textContent="";}
+}
+function loadSat(file){
+  if(!file||!/^image\//.test(file.type))return;
+  const url=URL.createObjectURL(file);const im=new Image();
+  im.onload=()=>{const k=Math.min(1,1600/im.width);const c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+    c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(url);
+    let q=.85,d=c.toDataURL("image/jpeg",q);while(d.length>2500000&&q>.4){q-=.15;d=c.toDataURL("image/jpeg",q);}
+    try{localStorage.setItem(SATK,JSON.stringify({img:d,t:Date.now()}));showSat();}
+    catch(e){$("satFrame").innerHTML="";const i2=new Image();i2.src=d;$("satFrame").appendChild(i2);$("satAge").textContent="no se ha podido guardar: la imagen es demasiado grande";}
+  };
+  im.src=url;
+}
+$("satFrame").addEventListener("click",()=>$("satFile").click());
+$("satFrame").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$("satFile").click();}});
+$("satPick").addEventListener("click",()=>$("satFile").click());
+$("satFile").addEventListener("change",e=>{loadSat(e.target.files[0]);e.target.value="";});
+$("satDel").addEventListener("click",()=>{try{localStorage.removeItem(SATK)}catch(e){}showSat();});
+const fr=$("satFrame");
+fr.addEventListener("dragover",e=>{e.preventDefault();fr.classList.add("drag");});
+fr.addEventListener("dragleave",()=>fr.classList.remove("drag"));
+fr.addEventListener("drop",e=>{e.preventDefault();fr.classList.remove("drag");loadSat(e.dataTransfer.files[0]);});
+document.addEventListener("paste",e=>{const it=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image/"));if(it){e.preventDefault();loadSat(it.getAsFile());}});
+
+
+legend();tick();
+const saved=store.get();
+if(saved){$("input").value=saved;}render();
+setInterval(tick,1000);setInterval(render,60000);
+</script>
+
+<script>
+// ===== Datos en vivo (GitHub Pages) =====
+const API="https://aviationweather.gov/api/data/";
+const IDS=Object.keys(ADS).join(",");
+let liveText="";
+function merged(){return liveText+"\n"+($("input").value||"");}
+async function fetchLive(){
+  const b=$("liveBadge");
+  try{
+    const [m,t]=await Promise.all([
+      fetch(API+"metar?ids="+IDS+"&format=raw&hours=3",{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()}),
+      fetch(API+"taf?ids="+IDS+"&format=raw",{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()})
+    ]);
+    // quedarse solo con el METAR más reciente de cada aeródromo
+    const seen={};const ml=m.split("\n").filter(l=>{const id=(l.match(/\b(LEBZ|LPBJ|LEMO)\b/)||[])[1];if(!id||seen[id])return false;seen[id]=1;return true;}).map(l=>/^(METAR|SPECI)/.test(l)?l:"METAR "+l);
+    const tl=t.replace(/\r/g,"").split(/\n(?=TAF|\S{4} \d{6}Z)/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l);
+    liveText=ml.join("\n")+"\n"+tl.join("\n");
+    b.className="livebadge ok";b.lastChild.textContent=" En vivo · "+new Date().toISOString().slice(11,16)+"Z";
+  }catch(e){
+    b.className="livebadge err";b.lastChild.textContent=" Sin conexión con aviationweather.gov · usa el cuadro";
+  }
+  // los datos pegados a mano tienen prioridad sobre los descargados
+  data=parseAll(liveText);const man=parseAll($("input").value||"");
+  for(const id in man){data[id]=data[id]||{notams:[]};if(man[id].metar)data[id].metar=man[id].metar;if(man[id].taf)data[id].taf=man[id].taf;data[id].notams=man[id].notams||[];}
+  isExample=false;render();
+}
+// satélite en vivo: EUMETSAT WMS, Meteosat IR 10.8
+const BBOX="35.5,-10,41,-3";
+function satUrl(layers){return "https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+layers+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+BBOX+"&width=800&height=629&_="+Math.floor(Date.now()/600000);}
+let useOwn=false;
+function refreshSat(){
+  if(useOwn)return;
+  const im=$("satLive");im.onerror=()=>{$("satAge").textContent="no se pudo cargar la imagen en vivo";$("satAge").className="age stale";};
+  im.onload=()=>{$("satAge").textContent="Meteosat IR 10.8 · EUMETSAT · "+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
+  im.src=satUrl("msg_fes:ir108");
+  const c=$("satCoast");c.onerror=()=>{c.hidden=true;};c.src=satUrl("backgrounds:ne_10m_coastline");
+}
+$("satMode").addEventListener("click",()=>{useOwn=!useOwn;$("live").hidden=useOwn;$("satFrame").hidden=!useOwn;$("satPick").hidden=!useOwn;$("satMode").textContent=useOwn?"Volver a imagen en vivo":"Usar imagen propia";if(useOwn)showSat();else refreshSat();});
+// arrancar
+document.querySelector(".top-in .clock").insertAdjacentHTML("beforebegin",'<span class="livebadge" id="liveBadge"><i></i> Conectando…</span>');
+fetchLive();refreshSat();setInterval(fetchLive,300000);setInterval(refreshSat,600000);
+</script>
+</body>
+</html>
