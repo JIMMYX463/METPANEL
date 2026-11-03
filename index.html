@@ -33,8 +33,26 @@ h1 small{display:block;font-size:.68rem;font-weight:700;letter-spacing:.12em;tex
 .livebadge i{width:8px;height:8px;border-radius:50%;background:var(--off)}
 .livebadge.ok i{background:var(--grn)}.livebadge.err i{background:var(--red)}
 .flight{border-top:1px solid var(--line);background:var(--field)}
-.flight-in{padding-block:8px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
-.flight label{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.flight-in{padding-block:8px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.tpg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tpl{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tp{display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:3px 4px;font-family:var(--mono)}
+.tp .day{display:flex;align-items:center;gap:2px;padding-right:6px;margin-right:2px;border-right:1px solid var(--line)}
+.tp .dd{font:600 .85rem var(--mono);min-width:8.2ch;text-align:center;font-variant-numeric:tabular-nums}
+.tp .f{display:flex;align-items:center}
+.tp input{width:2.4ch;box-sizing:content-box;font:700 1.15rem var(--mono);text-align:center;border:1px solid transparent;border-radius:3px;background:var(--field);color:var(--ink);padding:3px 2px;font-variant-numeric:tabular-nums}
+.tp input:focus{outline:2px solid var(--accent);outline-offset:0;background:var(--panel)}
+.tp .st{display:flex;flex-direction:column;margin-left:1px}
+.tp button{border:0;background:transparent;color:var(--accent);padding:0 5px;min-width:24px;font:700 .7rem var(--body);line-height:1;cursor:pointer;border-radius:3px}
+.tp .st button{height:16px}
+.tp .day button{height:28px;font-size:1rem}
+.tp button:hover{background:var(--field)}
+.tp .sep{font-weight:700;font-size:1.1rem;color:var(--muted)}
+.tp .z{font:700 .85rem var(--mono);color:var(--muted);margin-left:2px}
+@media (pointer:coarse){.tp .st button{height:22px;min-width:30px;font-size:.8rem}.tp .day button{height:36px;min-width:32px}}
+details.allnotam{border-top:1px dashed var(--line);padding-top:8px}
+details.allnotam summary{cursor:pointer;font-size:.82rem;font-weight:700;color:var(--accent)}
+details.allnotam .notams{margin-top:8px}
 select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px 8px}
 .fl-sum{font:600 .82rem var(--mono);color:var(--muted)}
 .wrap{max-width:1800px;margin:0 auto;padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
@@ -108,7 +126,11 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .mapframe{position:relative;width:100%;aspect-ratio:3/2;background:#fff;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
 .mapframe img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;cursor:zoom-in}
 .mapframe .fmsg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;margin:0;background:var(--field)}
-#live{background:#111}
+#live{background:#05080b}
+#live img{object-fit:fill;cursor:default}
+#live .msg{position:absolute;inset:0;display:grid;place-items:center;color:#c9d3dd;font-size:.88rem;text-align:center;padding:20px}
+.mk{position:absolute;transform:translate(-50%,-130%);font:700 .7rem var(--mono);color:#fff;background:rgba(208,49,45,.9);padding:1px 5px;border-radius:3px;white-space:nowrap}
+.mk::after{content:"";position:absolute;left:50%;top:calc(100% + 4px);width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 2px #fff}
 .mapframe.zoom{position:fixed;inset:0;z-index:20;width:auto;aspect-ratio:auto;border-radius:0;border:0;background:rgba(0,0,0,.92)}
 .mapframe.zoom img{cursor:zoom-out}
 .legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
@@ -157,9 +179,9 @@ html{scroll-behavior:smooth}
     <span class="livebadge" id="liveBadge"><i></i> Conectando…</span>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
   </div>
-  <div class="flight"><div class="in flight-in">
-    <label for="fStart">Inicio vuelo</label><select id="fStart"></select>
-    <label for="fEnd">Fin vuelo</label><select id="fEnd"></select>
+  <div class="flight" id="flight"><div class="in flight-in">
+    <div class="tpg"><span class="tpl">Inicio vuelo</span><div class="tp" role="group" aria-label="Inicio del vuelo"><span class="day"><button type="button" data-k="S" data-u="d" data-n="-1" aria-label="Día anterior">‹</button><span class="dd" id="tpSd"></span><button type="button" data-k="S" data-u="d" data-n="1" aria-label="Día siguiente">›</button></span><span class="f"><input id="tpSh" data-k="S" data-f="h" inputmode="numeric" maxlength="2" aria-label="Inicio del vuelo: hora"><span class="st"><button type="button" data-k="S" data-u="h" data-n="1" aria-label="Sumar una hora">▲</button><button type="button" data-k="S" data-u="h" data-n="-1" aria-label="Restar una hora">▼</button></span></span><span class="sep">:</span><span class="f"><input id="tpSm" data-k="S" data-f="m" inputmode="numeric" maxlength="2" aria-label="Inicio del vuelo: minutos"><span class="st"><button type="button" data-k="S" data-u="m" data-n="1" aria-label="Sumar 5 minutos">▲</button><button type="button" data-k="S" data-u="m" data-n="-1" aria-label="Restar 5 minutos">▼</button></span></span><span class="z">Z</span></div></div>
+    <div class="tpg"><span class="tpl">Fin vuelo</span><div class="tp" role="group" aria-label="Fin del vuelo"><span class="day"><button type="button" data-k="E" data-u="d" data-n="-1" aria-label="Día anterior">‹</button><span class="dd" id="tpEd"></span><button type="button" data-k="E" data-u="d" data-n="1" aria-label="Día siguiente">›</button></span><span class="f"><input id="tpEh" data-k="E" data-f="h" inputmode="numeric" maxlength="2" aria-label="Fin del vuelo: hora"><span class="st"><button type="button" data-k="E" data-u="h" data-n="1" aria-label="Sumar una hora">▲</button><button type="button" data-k="E" data-u="h" data-n="-1" aria-label="Restar una hora">▼</button></span></span><span class="sep">:</span><span class="f"><input id="tpEm" data-k="E" data-f="m" inputmode="numeric" maxlength="2" aria-label="Fin del vuelo: minutos"><span class="st"><button type="button" data-k="E" data-u="m" data-n="1" aria-label="Sumar 5 minutos">▲</button><button type="button" data-k="E" data-u="m" data-n="-1" aria-label="Restar 5 minutos">▼</button></span></span><span class="z">Z</span></div></div>
     <button type="button" id="fNow">Desde ahora</button>
     <span class="fl-sum" id="fSum"></span>
   </div></div>
@@ -179,9 +201,13 @@ html{scroll-behavior:smooth}
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Satélite · Meteosat</span><span class="age" id="satAge"></span></div>
-      <div class="mapframe" id="live"><p class="note fmsg" id="satMsg">Cargando imagen…</p><img id="satLive" alt="Imagen satélite de la península ibérica" hidden>
+      <div class="live mapframe" id="live">
+        <img id="satLive" alt="Imagen satélite de la península ibérica">
+        <img id="satCoast" alt="" aria-hidden="true">
+        <div id="marks"></div>
+        <div class="msg" id="satMsg" hidden></div>
       </div>
-      <div class="row"><button type="button" id="satLayer">Ver visible</button><span class="note">vía @meteolemobot · toca para ampliar</span></div>
+      <div class="row"><button type="button" id="satLayer">Cambiar a visible</button><span class="note">EUMETSAT · se renueva cada 10 min</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Mapa de colores OTAN</span><span class="age" id="colAge"></span></div>
@@ -212,30 +238,57 @@ const p2=x=>String(x).padStart(2,"0");
 const fmtZ=d=>d==="PERM"?"PERM":d?p2(d.getUTCDate())+"/"+p2(d.getUTCMonth()+1)+" "+p2(d.getUTCHours())+p2(d.getUTCMinutes())+"Z":"—";
 const overlap=(a1,a2,b1,b2)=>a1<b2&&b1<a2;
 
-/* ---------- ventana de vuelo ---------- */
+/* ---------- ventana de vuelo (hora y minutos con botones o teclado, en UTC) ---------- */
 let win={s:0,e:0};
-function buildSelects(){
-  const now=Date.now(),base=Math.floor(now/(H/2))*(H/2)-H;
-  const opts=[];for(let t=base;t<=base+36*H;t+=H/2)opts.push(t);
-  const lab=t=>{const d=new Date(t);return d.toLocaleDateString("es-ES",{weekday:"short",day:"2-digit",timeZone:"UTC"})+" · "+p2(d.getUTCHours())+p2(d.getUTCMinutes())+"Z";};
-  $("fStart").innerHTML=opts.map(t=>`<option value="${t}">${lab(t)}</option>`).join("");
-  $("fEnd").innerHTML=opts.map(t=>`<option value="${t}">${lab(t)}</option>`).join("");
-  let s=+ls.get("mp-fs"),e=+ls.get("mp-fe");
-  const snap=t=>opts.reduce((a,b)=>Math.abs(b-t)<Math.abs(a-t)?b:a,opts[0]);
-  if(!s||s<now-6*H||s>opts[opts.length-1]){s=snap(now);e=s+2*H;}
-  s=snap(s);e=snap(e||s+2*H);if(e<=s)e=s+H/2;
-  $("fStart").value=s;$("fEnd").value=e;setWin();
+const M5=5*60000;
+function initWin(){
+  const now=Date.now();let s=+ls.get("mp-fs"),e=+ls.get("mp-fe");
+  if(!s||s<now-12*H||s>now+10*24*H){s=Math.ceil(now/M5)*M5;e=s+2*H;}
+  if(!e||e<=s)e=s+2*H;
+  win.s=s;win.e=e;applyWin();
 }
-function setWin(){
-  win.s=+$("fStart").value;win.e=+$("fEnd").value;
-  if(win.e<=win.s){win.e=win.s+H/2;$("fEnd").value=win.e;}
-  ls.set("mp-fs",win.s);ls.set("mp-fe",win.e);if(typeof renderSig==="function"){sigAuto=true;renderSig();}
-  const m=(win.e-win.s)/60000;$("fSum").textContent=`${Math.floor(m/60)} h ${p2(m%60)} min`;
+function paintTP(k,t){
+  const d=new Date(t);
+  $("tp"+k+"d").textContent=d.toLocaleDateString("es-ES",{weekday:"short",day:"2-digit",month:"2-digit",timeZone:"UTC"});
+  if(document.activeElement!==$("tp"+k+"h"))$("tp"+k+"h").value=p2(d.getUTCHours());
+  if(document.activeElement!==$("tp"+k+"m"))$("tp"+k+"m").value=p2(d.getUTCMinutes());
+}
+function applyWin(){
+  if(win.e<=win.s)win.e=win.s+30*60000;
+  ls.set("mp-fs",win.s);ls.set("mp-fe",win.e);
+  paintTP("S",win.s);paintTP("E",win.e);
+  const m=Math.round((win.e-win.s)/60000);$("fSum").textContent=`${Math.floor(m/60)} h ${p2(m%60)} min`;
+  if(typeof renderSig==="function"){sigAuto=true;renderSig();}
   render();
 }
-$("fStart").addEventListener("change",()=>{const d=win.e-win.s;$("fEnd").value=+$("fStart").value+Math.max(d,H/2);if(!$("fEnd").value)$("fEnd").selectedIndex=$("fEnd").options.length-1;setWin();});
-$("fEnd").addEventListener("change",setWin);
-$("fNow").addEventListener("click",()=>{ls.set("mp-fs","");buildSelects();});
+function moveWin(k,ms){
+  if(k==="S"){const dur=win.e-win.s;win.s+=ms;win.e=win.s+dur;}else{win.e+=ms;}
+  applyWin();
+}
+function typedWin(k,f){
+  const inp=$("tp"+k+f);const v=parseInt(inp.value,10),max=f==="h"?23:59;
+  const t=k==="S"?win.s:win.e;
+  if(isNaN(v)||v<0||v>max){inp.value="";paintTP(k,t);return;}
+  const d=new Date(t);if(f==="h")d.setUTCHours(v);else d.setUTCMinutes(v);
+  moveWin(k,+d-t);
+}
+$("flight").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-k]");if(!b)return;
+  const unit={d:24*H,h:H,m:M5}[b.dataset.u];moveWin(b.dataset.k,unit*(+b.dataset.n));
+});
+$("flight").addEventListener("keydown",e=>{
+  const i=e.target.closest("input[data-k]");if(!i)return;
+  if(e.key==="ArrowUp"||e.key==="ArrowDown"){e.preventDefault();moveWin(i.dataset.k,(i.dataset.f==="h"?H:M5)*(e.key==="ArrowUp"?1:-1));i.select();}
+  else if(e.key==="Enter"){typedWin(i.dataset.k,i.dataset.f);i.select();}
+});
+$("flight").addEventListener("input",e=>{
+  const i=e.target.closest("input[data-k]");if(!i)return;
+  i.value=i.value.replace(/\D/g,"").slice(0,2);
+  if(i.value.length===2){typedWin(i.dataset.k,i.dataset.f);const nx=i.dataset.f==="h"?$("tp"+i.dataset.k+"m"):null;if(nx){nx.focus();nx.select();}}
+});
+$("flight").addEventListener("focusout",e=>{const i=e.target.closest("input[data-k]");if(i)typedWin(i.dataset.k,i.dataset.f);});
+$("flight").addEventListener("focusin",e=>{const i=e.target.closest("input[data-k]");if(i)setTimeout(()=>i.select(),0);});
+$("fNow").addEventListener("click",()=>{win.s=Math.ceil(Date.now()/M5)*M5;win.e=win.s+2*H;applyWin();});
 
 /* ---------- METAR / TAF ---------- */
 function parseWx(tok){
@@ -374,6 +427,11 @@ function lpbjBar(s,e){
 }
 
 /* ---------- render ---------- */
+function notamCard(n){
+  const now=Date.now(),end=n.to==="PERM"?Infinity:n.to?+n.to:Infinity,hit=n.from?overlap(win.s,win.e,+n.from,end):false;
+  const h=n.issued?Math.max(0,Math.round((now-n.issued)/H)):null,ago=h==null?"":h<48?`hace ${h} h`:`hace ${Math.round(h/24)} días`;
+  return `<div class="notam ${hit?"hit":""}"><div class="notam-h"><b>${esc(n.id)}</b>${hit?'<span class="tag aff">AFECTA AL VUELO</span>':''}${h!=null&&h<6?'<span class="tag new">NUEVO</span>':''}<span>${fmtZ(n.from)} → ${fmtZ(n.to)}${n.est?" EST":""}</span>${n.sched?`<span>${esc(n.sched)}</span>`:""}<span>${ago}</span></div><p>${esc(n.text)}</p></div>`;
+}
 let OBS={},NOT={},loaded=false,notamOk=false;
 function render(){
   const cards=$("cards"),sum=$("summary");if(!win.s)return;cards.innerHTML="";sum.innerHTML="";
@@ -393,10 +451,8 @@ function render(){
     let worst=null;
     const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(hit&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}">${esc(g.line)}</span>`;}).join(""):"";
     const notams=(NOT[id]||[]).filter(n=>n.issued&&now-n.issued<=24*H&&now-n.issued>=-H).sort((a,b)=>b.issued-a.issued);
-    const notamsHtml=notams.map(n=>{
-      const end=n.to==="PERM"?Infinity:n.to?+n.to:Infinity;const hit=n.from?overlap(win.s,win.e,+n.from,end):false;
-      const h=Math.max(0,Math.round((now-n.issued)/H));
-      return `<div class="notam ${hit?"hit":""}"><div class="notam-h"><b>${esc(n.id)}</b>${hit?'<span class="tag aff">AFECTA AL VUELO</span>':''}${h<6?'<span class="tag new">NUEVO</span>':''}<span>${fmtZ(n.from)} → ${fmtZ(n.to)}${n.est?" EST":""}</span>${n.sched?`<span>${esc(n.sched)}</span>`:""}<span>hace ${h} h</span></div><p>${esc(n.text)}</p></div>`;}).join("");
+    const notamsHtml=notams.map(notamCard).join("");
+    const inForce=(NOT[id]||[]).filter(n=>!notams.includes(n)&&(!n.to||n.to==="PERM"||+n.to>now)).sort((a,b)=>{const ha=a.from&&overlap(win.s,win.e,+a.from,a.to==="PERM"||!a.to?Infinity:+a.to),hb=b.from&&overlap(win.s,win.e,+b.from,b.to==="PERM"||!b.to?Infinity:+b.to);return (hb-ha)||((b.issued||0)-(a.issued||0));});
     const nHit=notams.filter(n=>n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to)).length;
     sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR">${m?m.cc:"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF en ventana">${worst||"—"}</span></a>`);
     const el=document.createElement("article");el.className="ad"+(closed?" closed":late?" late":"");el.id="ad-"+slot;
@@ -408,17 +464,18 @@ function render(){
         <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age">resaltado = ventana de vuelo</span></div>
           ${t?`<pre class="raw taf-raw">${tafLines}</pre>`:`<p class="empty">${loaded?"Sin TAF disponible.":"Cargando…"}</p>`}</div>
         <div class="sec"><div class="sec-h"><span class="label">NOTAM de aeródromo · últimas 24 h</span><span class="age">${!notamOk?"":notams.length+" reciente"+(notams.length===1?"":"s")}${nHit?` · ${nHit} afecta${nHit===1?"":"n"} al vuelo`:""}</span></div>
-          ${notams.length?`<div class="notams">${notamsHtml}</div>`:`<p class="empty">${!loaded?"Cargando…":notamOk?"Ningún NOTAM publicado en las últimas 24 h.":`NOTAM no disponibles en vivo. Consulta <a href="${id.startsWith("LP")?"https://ops.nav.pt/":"https://notampib.enaire.es/"}" target="_blank" rel="noopener">${id.startsWith("LP")?"NAV Portugal":"ENAIRE"} ↗</a>`}</p>`}</div>
+          ${notams.length?`<div class="notams">${notamsHtml}</div>`:`<p class="empty">${!loaded?"Cargando…":notamOk?"Ningún NOTAM publicado en las últimas 24 h.":`NOTAM no disponibles en vivo. Consulta <a href="${id.startsWith("LP")?"https://ops.nav.pt/":"https://notampib.enaire.es/"}" target="_blank" rel="noopener">${id.startsWith("LP")?"NAV Portugal":"ENAIRE"} ↗</a>`}</p>`}${(inForce.length?`<details class="allnotam"><summary>Ver todos los NOTAM en vigor (${inForce.length} más)</summary><div class="notams">${inForce.map(notamCard).join("")}</div></details>`:"")}</div>
       </div>`;
     cards.appendChild(el);
   });
+  placeMarks();
 }
 $("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adsel");if(!sel)return;SLOTS[+sel.dataset.slot]=sel.value;ls.set("mp-ads",JSON.stringify(SLOTS));render();});
 
 /* ---------- carga de datos (archivos del repositorio, actualizados por GitHub Actions) ---------- */
 async function load(){
   const get=u=>fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()});
-  const res=await Promise.allSettled([get("data/metar.txt"),get("data/taf.txt"),get("data/notam.txt").catch(()=>get("data/notam.json"))]);
+  const res=await Promise.allSettled([get("data/metar.txt"),get("data/taf.txt"),get("data/notam.json")]);
   const ok=res.filter(r=>r.status==="fulfilled").length;
   if(res[0].status==="fulfilled"||res[1].status==="fulfilled"){
     const m=res[0].value||"",t=res[1].value||"";
@@ -473,31 +530,37 @@ async function loadCol(){
   $("colAge").textContent="hace "+(min<120?min+" min":Math.round(min/60)+" h");$("colAge").className="age"+(min>90?" stale":"");
 }
 
-/* ---------- satélite (imágenes /sat del bot, guardadas por GitHub Actions) ---------- */
-let SAT={},satMode=(ls.get("mp-sat")==="vis")?"vis":"ir";
-async function loadSat(){
-  try{SAT=JSON.parse(await fetch("data/sat.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));}catch(e){SAT={};}
-  renderSat();
+/* ---------- posiciones de aeródromos (data/stations.json) ---------- */
+let POS={};
+async function loadStations(){
+  try{const j=JSON.parse(await fetch("data/stations.json?_="+Math.floor(Date.now()/86400000),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));
+    for(const st of (Array.isArray(j)?j:[]))if(st.icaoId&&st.lat!=null)POS[st.icaoId]={lat:+st.lat,lon:+st.lon};}catch(e){}
+  placeMarks();
 }
-function renderSat(){
-  $("satLayer").textContent=satMode==="ir"?"Ver visible":"Ver infrarrojo";
-  const m=SAT[satMode]||SAT.ir||SAT.vis,im=$("satLive"),msg=$("satMsg");
-  if(!m){im.hidden=true;msg.hidden=false;msg.textContent=loaded?"Imagen satélite no disponible todavía.":"Cargando imagen…";$("satAge").textContent="";return;}
-  im.onload=()=>{im.hidden=false;msg.hidden=true;};
-  im.onerror=()=>{im.hidden=true;msg.hidden=false;msg.textContent="No se ha podido cargar la imagen.";};
-  const src="data/"+m.file+"?_="+m.received;if(im.getAttribute("src")!==src)im.src=src;
-  const min=Math.round((Date.now()-m.received*1000)/60000);
-  $("satAge").textContent=(SAT[satMode]?(satMode==="ir"?"IR":"visible"):"")+" · hace "+(min<120?min+" min":Math.round(min/60)+" h");
-  $("satAge").className="age"+(min>90?" stale":"");
+function placeMarks(){
+  $("marks").innerHTML=SLOTS.map(id=>{const p=POS[id];if(!p||p.lat<BB.s||p.lat>BB.n||p.lon<BB.w||p.lon>BB.e)return "";
+    return `<span class="mk" style="left:${((p.lon-BB.w)/(BB.e-BB.w)*100).toFixed(1)}%;top:${((BB.n-p.lat)/(BB.n-BB.s)*100).toFixed(1)}%">${id}</span>`;}).join("");
 }
-$("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";ls.set("mp-sat",satMode);renderSat();});
-$("satLive").addEventListener("click",()=>$("live").classList.toggle("zoom"));
+
+/* ---------- satélite (EUMETSAT WMS) ---------- */
+const BB={s:35.0,w:-10,n:44.6,e:4.4};const BBOX=[BB.s,BB.w,BB.n,BB.e].join(",");
+const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
+let satMode="ir";
+const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+BBOX+"&width=900&height=600&_="+Math.floor(Date.now()/600000);
+function refreshSat(){
+  const im=$("satLive"),msg=$("satMsg");let i=0;const list=LAYERS[satMode];
+  im.onload=()=>{im.style.visibility='';msg.hidden=true;$("satAge").textContent=(satMode==="ir"?"IR 10.8 · ":"visible · ")+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
+  im.onerror=()=>{i++;if(i<list.length){im.src=satUrl(list[i]);}else{im.style.visibility='hidden';msg.hidden=false;msg.innerHTML='No se ha podido cargar la imagen.<br>Ábrela en EUMETSAT View.';$("satAge").textContent="";}};
+  im.src=satUrl(list[0]);
+  const c=$("satCoast");c.onerror=()=>{c.hidden=true;};c.src=satUrl("backgrounds:ne_10m_coastline");
+}
+$("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";$("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo";refreshSat();});
 
 /* ---------- arranque ---------- */
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
 tick();setInterval(tick,1000);
-buildSelects();load();loadSat();loadSig();loadCol();
-setInterval(load,300000);setInterval(loadSat,600000);setInterval(loadSig,600000);setInterval(loadCol,600000);setInterval(render,60000);
+initWin();load();refreshSat();loadSig();loadCol();loadStations();
+setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSig,600000);setInterval(loadCol,600000);setInterval(render,60000);
 </script>
 
 </body>
