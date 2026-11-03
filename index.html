@@ -90,18 +90,31 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .tag.new{background:var(--accent);color:var(--panel)}
 .tag.aff{background:var(--warn);color:#fff}
 .bottom{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
-.live{position:relative;background:#05080b;border-radius:4px;overflow:hidden;aspect-ratio:800/480;max-width:100%}
-.live img{position:absolute;inset:0;width:100%;height:100%}
+.bottom .sec-h{flex-wrap:nowrap;min-height:1.4em}.bottom .sec-h .age{white-space:nowrap}
 .live .msg{position:absolute;inset:0;display:grid;place-items:center;color:#c9d3dd;font-size:.88rem;text-align:center;padding:20px}
 .mk{position:absolute;transform:translate(-50%,-130%);font:700 .7rem var(--mono);color:#fff;background:rgba(208,49,45,.9);padding:1px 5px;border-radius:3px;white-space:nowrap}
 .mk::after{content:"";position:absolute;left:50%;top:calc(100% + 4px);width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 2px #fff}
 .sigtabs{display:flex;gap:6px;flex-wrap:wrap}
 .sigtabs button[aria-selected="true"]{background:var(--accent);color:var(--panel)}
 .sigtabs button.near::after{content:" ✈";}
-.sigimg{background:var(--field);border-radius:4px;overflow:hidden;min-height:120px;display:grid;place-items:center}
-.sigimg img{width:100%;height:auto;display:block;background:#fff;cursor:zoom-in}
-.sigimg.zoom{position:fixed;inset:0;z-index:20;border-radius:0;overflow:auto;place-items:start center;background:rgba(0,0,0,.85);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
-.sigimg.zoom img{width:auto;max-width:none;min-width:100%;cursor:zoom-out}
+.lreason{flex-basis:100%;font-weight:700;color:var(--ink)!important}
+.lbar{flex-basis:100%;position:relative;height:30px;margin:4px 0 16px;background:var(--field);border-radius:3px}
+.lbar i{position:absolute;top:0;bottom:0;display:block}
+.lbar .op{background:color-mix(in srgb,var(--grn) 45%,transparent)}
+.lbar .fw{border:2px solid var(--ink);border-radius:3px;top:-3px;bottom:-3px}
+.lbar .h1{background:repeating-linear-gradient(135deg,transparent 0 4px,color-mix(in srgb,var(--amb) 75%,transparent) 4px 7px);top:auto;height:7px;bottom:0}
+.lbar b{position:absolute;top:100%;transform:translateX(-50%);font:600 .66rem var(--mono);color:var(--muted);margin-top:3px}
+.lkey{flex-basis:100%;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.74rem;color:var(--muted)}
+.lkey span{display:inline-flex;align-items:center;gap:5px}
+.lkey i{width:14px;height:9px;display:inline-block;border-radius:2px}
+.lkey .op{background:color-mix(in srgb,var(--grn) 45%,transparent)}.lkey .fw{border:2px solid var(--ink)}.lkey .h1{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--amb) 3px 5px)}
+.mapframe{position:relative;width:100%;aspect-ratio:3/2;background:#fff;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.mapframe img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;cursor:zoom-in}
+.mapframe .fmsg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;margin:0;background:var(--field)}
+.mapframe.zoom{position:fixed;inset:0;z-index:20;width:auto;aspect-ratio:auto;border-radius:0;border:0;background:rgba(0,0,0,.92)}
+.mapframe.zoom img{cursor:zoom-out}
+.live.mapframe{background:#05080b}
+.live.mapframe img{object-fit:fill;cursor:default}
 .legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .legend div{display:flex;align-items:center;gap:8px;font-size:.78rem;background:var(--field);border-radius:4px;padding:4px}
 .legend span{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted)}
@@ -164,23 +177,24 @@ html{scroll-behavior:smooth}
 
   <section class="bottom">
     <div class="box" style="display:grid;gap:10px">
-      <div class="sec-h"><span class="label">Mapa significativo de baja cota · IBE</span><span class="age" id="sigAge"></span></div>
-      <div class="sigtabs" id="sigTabs" role="tablist" aria-label="Hora del mapa"></div>
-      <div class="sigimg" id="sigBox"><p class="note" id="sigMsg">Cargando mapa…</p><img id="sigImg" alt="Mapa significativo de baja cota de la Península" hidden></div>
+      <div class="sec-h"><span class="label">Significativo baja cota · IBE</span><span class="age" id="sigAge"></span></div>
+      <div class="mapframe" id="sigBox"><p class="note fmsg" id="sigMsg">Cargando mapa…</p><img id="sigImg" alt="Mapa significativo de baja cota de la Península" hidden></div>
+      <div class="row"><div class="sigtabs" id="sigTabs" role="tablist" aria-label="Hora del mapa"></div><span class="note">✈ = más cercano al vuelo</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
-      <div class="sec-h"><span class="label">Satélite · Meteosat IR 10.8 · EUMETSAT</span><span class="age" id="satAge"></span></div>
-      <div class="live" id="live">
+      <div class="sec-h"><span class="label">Satélite · Meteosat</span><span class="age" id="satAge"></span></div>
+      <div class="live mapframe" id="live">
         <img id="satLive" alt="Imagen satélite de la península ibérica">
         <img id="satCoast" alt="" aria-hidden="true">
         <div id="marks"></div>
         <div class="msg" id="satMsg" hidden></div>
       </div>
-      <div class="row"><button type="button" id="satLayer">Cambiar a visible</button><span class="note">Se renueva cada 10 min.</span></div>
+      <div class="row"><button type="button" id="satLayer">Cambiar a visible</button><span class="note">EUMETSAT · se renueva cada 10 min</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Mapa de colores OTAN</span><span class="age" id="colAge"></span></div>
-      <div class="sigimg" id="colBox"><p class="note" id="colMsg">Cargando mapa…</p><img id="colImg" alt="Mapa de colores OTAN de las bases" hidden></div>
+      <div class="mapframe" id="colBox"><p class="note fmsg" id="colMsg">Cargando mapa…</p><img id="colImg" alt="Mapa de colores OTAN de las bases" hidden></div>
+      <div class="row"><span class="note">AEMET · vía @meteolemobot · toca para ampliar</span></div>
     </div>
   </section>
 </div>
@@ -348,7 +362,23 @@ function lpbjStatus(s,e){
   const ok=full||!!late;
   const now=Date.now();const cur=iv.find(([o,c])=>o<=now&&c>now);
   const next=lpbjOpenIntervals(now,now+8*24*H).find(([o])=>o>now);
-  return {ok,late:late?late[0]:null,openNow:!!cur,cur,next};
+  let reason;
+  if(full){const iv2=iv.find(([o,c])=>o<=s&&c>=e);reason=`Abierto durante todo el vuelo (cierra a las ${fmtZ(new Date(iv2[1])).slice(6)}).`;}
+  else if(late)reason="";
+  else{
+    const inNow=iv.find(([o,c])=>o<=s&&c>s), nx=lpbjOpenIntervals(s,s+8*24*H).find(([o])=>o>s);
+    if(inNow)reason=`Cierra a las ${fmtZ(new Date(inNow[1])).slice(6)}, antes del fin del vuelo.`;
+    else if(nx&&nx[0]<=s+H)reason=`Abre a las ${fmtZ(new Date(nx[0])).slice(6)} pero cierra a las ${fmtZ(new Date(nx[1])).slice(6)}, antes del fin del vuelo.`;
+    else reason=`Cerrado al despegue y no abre hasta el ${fmtZ(nx?new Date(nx[0]):null)} (más de 1 h después del despegue).`;
+  }
+  return {ok,late:late?late[0]:null,reason,openNow:!!cur,cur,next};
+}
+function lpbjBar(s,e){
+  const a=s-3*H,b=e+3*H,iv=lpbjOpenIntervals(a,b),pc=t=>(Math.min(Math.max(t,a),b)-a)/(b-a)*100;
+  const segs=iv.filter(([o,c])=>c>a&&o<b).map(([o,c])=>`<i class="op" style="left:${pc(o).toFixed(2)}%;width:${(pc(c)-pc(o)).toFixed(2)}%"></i>`).join("");
+  const ticks=[];for(let t=Math.ceil(a/(3*H))*3*H;t<=b;t+=3*H)ticks.push(`<b style="left:${pc(t).toFixed(2)}%">${p2(new Date(t).getUTCHours())}Z</b>`);
+  return `<div class="lbar" aria-hidden="true">${segs}<i class="fw" style="left:${pc(s).toFixed(2)}%;width:${(pc(e)-pc(s)).toFixed(2)}%"></i><i class="h1" style="left:${pc(s).toFixed(2)}%;width:${(pc(s+H)-pc(s)).toFixed(2)}%"></i>${ticks.join("")}</div><div class="lkey"><span><i class="op"></i>Abierto</span><span><i class="fw"></i>Vuelo</span><span><i class="h1"></i>1.ª hora</span></div>`;
+
 }
 
 /* ---------- render ---------- */
@@ -363,7 +393,9 @@ function render(){
       const st=lpbjStatus(win.s,win.e);closed=!st.ok;late=!!st.late;
       ops=`<div class="ops"><span class="pill ${st.late?"warn":st.ok?"":"no"}">${st.late?"DISPONIBLE A PARTIR DE "+fmtZ(new Date(st.late)).slice(6):st.ok?"DISPONIBLE COMO ALTERNATIVO":"NO DISPONIBLE COMO ALTERNATIVO"}</span>
         ${st.late?`<p class="opswarn">⚠ LPBJ está cerrado al despegue y abre a las ${fmtZ(new Date(st.late)).slice(6)}. Elige otro alternativo para la salida; a partir de esa hora puedes cambiar a LPBJ.</p>`:""}
-        <span>${st.openNow?"Abierto ahora hasta "+fmtZ(new Date(st.cur[1])).slice(6):"Cerrado ahora"}${st.next&&!st.openNow?" · abre "+fmtZ(new Date(st.next[0])):""}</span>
+        ${st.reason?`<span class="lreason">${st.reason}</span>`:""}
+        ${lpbjBar(win.s,win.e)}
+        <span>${st.openNow?"Ahora abierto hasta "+fmtZ(new Date(st.cur[1])).slice(6):"Ahora cerrado"}${st.next&&!st.openNow?" · abre "+fmtZ(new Date(st.next[0])):""}</span>
         <span>L–J 0830–1715 · V 0830–1230 (UTC invierno) · fines de semana y festivos solo PPR</span></div>`;
     }
     let age="",stale=false;
@@ -435,7 +467,7 @@ function renderSig(){
   im.onerror=()=>{im.hidden=true;$("sigMsg").hidden=false;$("sigMsg").textContent="No se ha podido cargar la imagen.";};
   const src="data/"+m.file+"?_="+m.received;if(im.getAttribute("src")!==src)im.src=src;
   const min=Math.round((Date.now()-m.received*1000)/60000);
-  $("sigAge").textContent="recibido hace "+(min<120?min+" min":Math.round(min/60)+" h")+" · ✈ = más cercano al vuelo";
+  $("sigAge").textContent="hace "+(min<120?min+" min":Math.round(min/60)+" h");
 }
 let sigAuto=true;
 $("sigTabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sigSel=b.dataset.h;sigAuto=false;renderSig();});
@@ -449,7 +481,7 @@ async function loadCol(){
   im.onerror=()=>{im.hidden=true;$("colMsg").hidden=false;$("colMsg").textContent="No se ha podido cargar la imagen.";};
   const src="data/"+m.file+"?_="+m.received;if(im.getAttribute("src")!==src)im.src=src;
   const min=Math.round((Date.now()-m.received*1000)/60000);
-  $("colAge").textContent="recibido hace "+(min<120?min+" min":Math.round(min/60)+" h");$("colAge").className="age"+(min>90?" stale":"");
+  $("colAge").textContent="hace "+(min<120?min+" min":Math.round(min/60)+" h");$("colAge").className="age"+(min>90?" stale":"");
 }
 
 /* ---------- posiciones de aeródromos (data/stations.json) ---------- */
@@ -465,14 +497,14 @@ function placeMarks(){
 }
 
 /* ---------- satélite (EUMETSAT WMS) ---------- */
-const BB={s:35.5,w:-10,n:44.2,e:4.5};const BBOX=[BB.s,BB.w,BB.n,BB.e].join(",");
+const BB={s:35.0,w:-10,n:44.6,e:4.4};const BBOX=[BB.s,BB.w,BB.n,BB.e].join(",");
 const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
 let satMode="ir";
-const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+BBOX+"&width=800&height=480&_="+Math.floor(Date.now()/600000);
+const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+BBOX+"&width=900&height=600&_="+Math.floor(Date.now()/600000);
 function refreshSat(){
   const im=$("satLive"),msg=$("satMsg");let i=0;const list=LAYERS[satMode];
-  im.onload=()=>{msg.hidden=true;$("satAge").textContent="cargada "+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
-  im.onerror=()=>{i++;if(i<list.length){im.src=satUrl(list[i]);}else{msg.hidden=false;msg.innerHTML='No se ha podido cargar la imagen.<br>Ábrela en EUMETSAT View.';$("satAge").textContent="";}};
+  im.onload=()=>{im.style.visibility='';msg.hidden=true;$("satAge").textContent=(satMode==="ir"?"IR 10.8 · ":"visible · ")+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
+  im.onerror=()=>{i++;if(i<list.length){im.src=satUrl(list[i]);}else{im.style.visibility='hidden';msg.hidden=false;msg.innerHTML='No se ha podido cargar la imagen.<br>Ábrela en EUMETSAT View.';$("satAge").textContent="";}};
   im.src=satUrl(list[0]);
   const c=$("satCoast");c.onerror=()=>{c.hidden=true;};c.src=satUrl("backgrounds:ne_10m_coastline");
 }
