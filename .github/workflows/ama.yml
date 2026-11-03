@@ -1,8 +1,6 @@
 name: Mapa significativo baja cota (AMA)
 
 on:
-  schedule:
-    - cron: "5,35 * * * *"
   workflow_dispatch:
     inputs:
       debug:
@@ -27,7 +25,7 @@ jobs:
           AMA_USER: ${{ secrets.AMA_USER }}
           AMA_PASS: ${{ secrets.AMA_PASS }}
           AMA_DEBUG: ${{ github.event.inputs.debug }}
-        run: python3 scripts/ama_swc.py
+        run: python3 scripts/ama_swc.py || echo "AMA no accesible desde GitHub"
       - name: Guardar cambios
         run: |
           git config user.name "github-actions[bot]"
