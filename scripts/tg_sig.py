@@ -1,7 +1,7 @@
 """Mapa significativo de baja cota desde @meteolemobot (Telegram).
 Modos:
   login  -> pide un código a Telegram, lo espera como comentario en una issue y guarda la sesión cifrada.
-  fetch  -> envía '/sig HH ibe' y '/colores' al bot y guarda las imágenes en data/.
+  fetch  -> envía '/sig HH ibe', '/sat ir|vis' y '/colores' al bot y guarda las imágenes en data/.
 Secretos: TG_API_ID, TG_API_HASH, TG_PHONE y, si tienes verificación en dos pasos, TG_2FA.
 Nunca imprime credenciales ni la sesión."""
 import asyncio, base64, hashlib, json, os, pathlib, re, subprocess, sys, time
@@ -115,6 +115,20 @@ async def fetch():
         meta[hh] = {"file": out.name, "received": int(got.date.timestamp()), "caption": (got.message or "")[:300]}
         log(f"/sig {hh} ibe: imagen guardada ({out.stat().st_size} bytes)")
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1))
+    # Satélite (infrarrojo y visible)
+    sat = {}
+    sat_path = pathlib.Path("data/sat.json")
+    if sat_path.exists():
+        sat = json.loads(sat_path.read_text())
+    for ch in ("ir", "vis"):
+        got = await ask(client, bot, f"/sat {ch}")
+        if not got:
+            continue
+        out = pathlib.Path(f"data/sat_{ch}.jpg")
+        await client.download_media(got, file=str(out))
+        sat[ch] = {"file": out.name, "received": int(got.date.timestamp()), "caption": (got.message or "")[:200]}
+        log(f"/sat {ch}: imagen guardada ({out.stat().st_size} bytes)")
+    sat_path.write_text(json.dumps(sat, ensure_ascii=False, indent=1))
     # Mapa de colores OTAN
     got = await ask(client, bot, "/colores")
     if got:
