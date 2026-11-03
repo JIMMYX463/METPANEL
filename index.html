@@ -380,17 +380,20 @@ function merged(){return liveText+"\n"+($("input").value||"");}
 async function fetchLive(){
   const b=$("liveBadge");
   try{
-    const [m,t]=await Promise.all([
-      fetch(API+"metar?ids="+IDS+"&format=raw&hours=3",{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()}),
-      fetch(API+"taf?ids="+IDS+"&format=raw",{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()})
-    ]);
+    // 1º: archivos que GitHub Actions deja en el propio repositorio; 2º: API directa
+    const get=u=>fetch(u,{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()});
+    const v="?_="+Date.now();
+    let m,t;
+    try{[m,t]=await Promise.all([get("data/metar.txt"+v),get("data/taf.txt"+v)]);}
+    catch(e){[m,t]=await Promise.all([get(API+"metar?ids="+IDS+"&format=raw&hours=3"),get(API+"taf?ids="+IDS+"&format=raw")]);}
+    if(!m.trim()&&!t.trim())throw "vacío";
     // quedarse solo con el METAR más reciente de cada aeródromo
     const seen={};const ml=m.split("\n").filter(l=>{const id=(l.match(/\b(LEBZ|LPBJ|LEMO)\b/)||[])[1];if(!id||seen[id])return false;seen[id]=1;return true;}).map(l=>/^(METAR|SPECI)/.test(l)?l:"METAR "+l);
     const tl=t.replace(/\r/g,"").split(/\n(?=TAF|\S{4} \d{6}Z)/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l);
     liveText=ml.join("\n")+"\n"+tl.join("\n");
     b.className="livebadge ok";b.lastChild.textContent=" En vivo · "+new Date().toISOString().slice(11,16)+"Z";
   }catch(e){
-    b.className="livebadge err";b.lastChild.textContent=" Sin conexión con aviationweather.gov · usa el cuadro";
+    b.className="livebadge err";b.lastChild.textContent=" Sin datos en vivo · usa el cuadro";
   }
   // los datos pegados a mano tienen prioridad sobre los descargados
   data=parseAll(liveText);const man=parseAll($("input").value||"");
