@@ -148,7 +148,7 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .mapframe .fmsg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;margin:0;background:var(--field)}
 #live{background:#05080b}
 #live img{object-fit:fill;cursor:default}
-.secov{position:absolute;max-width:none;transform-origin:50% 50%;pointer-events:none;opacity:.9}
+.secov{position:absolute;max-width:none;transform-origin:50% 50%;pointer-events:none;filter:drop-shadow(0 0 1px rgba(0,0,0,.95)) drop-shadow(0 0 1px rgba(0,0,0,.6))}
 #live .msg{position:absolute;inset:0;display:grid;place-items:center;color:#c9d3dd;font-size:.88rem;text-align:center;padding:20px}
 .mk{position:absolute;transform:translate(-50%,-130%);font:700 .7rem var(--mono);color:#fff;background:rgba(208,49,45,.9);padding:1px 5px;border-radius:3px;white-space:nowrap}
 .mk::after{content:"";position:absolute;left:50%;top:calc(100% + 4px);width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 2px #fff}
@@ -363,7 +363,7 @@ html{scroll-behavior:smooth}
         <h3><span class="hn">7</span>Mapas</h3>
         <ul class="hl">
           <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z; <b>✈</b> marca la más cercana a tu despegue y se elige sola.</li>
-          <li><b>Satélite:</b> EUMETSAT, infrarrojo o visible, con tus aeródromos marcados.</li>
+          <li><b>Satélite:</b> EUMETSAT, infrarrojo o visible, con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
           <li><b>Toca un mapa</b> para verlo a pantalla completa; vuelve a tocar para cerrarlo.</li>
         </ul>
@@ -734,8 +734,10 @@ function placeOverlay(){
   $("secBtn").textContent=showSec?"Sectores ✓":"Sectores";$("secBtn").setAttribute("aria-pressed",showSec);
   const z=BB===VIEWS.sec;$("satView").textContent=z?"Ver península":"Zoom sectores";$("satView").setAttribute("aria-pressed",z);
 }
-$("secOv").addEventListener("load",()=>{$("secOv").dataset.ok="1";$("secBtn").hidden=false;placeOverlay();});
+function secReady(){$("secOv").dataset.ok="1";$("secBtn").hidden=false;placeOverlay();}
+$("secOv").addEventListener("load",secReady);
 $("secOv").addEventListener("error",()=>{$("secOv").hidden=true;});
+if($("secOv").complete&&$("secOv").naturalWidth)secReady();
 $("secBtn").addEventListener("click",()=>{showSec=!showSec;ls.set("mp-sec",showSec?"1":"0");placeOverlay();});
 $("satView").addEventListener("click",()=>{BB=BB===VIEWS.sec?VIEWS.pen:VIEWS.sec;ls.set("mp-view",BB===VIEWS.sec?"sec":"pen");refreshSat();placeMarks();placeOverlay();});
 const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
@@ -761,7 +763,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611032114";
+const BUILD="202611032119";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
