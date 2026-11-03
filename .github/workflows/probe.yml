@@ -1,0 +1,11 @@
+name: Prueba fuentes NOTAM (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q curl_cffi
+      - run: python3 scripts/probe_notam.py
