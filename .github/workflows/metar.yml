@@ -1,4 +1,4 @@
-name: Actualizar METAR, TAF y NOTAM
+name: Actualizar METAR y TAF
 
 on:
   schedule:
@@ -30,22 +30,6 @@ jobs:
           keep data/metar.txt
           curl -fsS -A "$UA" "https://aviationweather.gov/api/data/taf?ids=$IDS&format=raw" -o data/taf.txt.tmp || true
           keep data/taf.txt
-
-          # NOTAM de los tres aeródromos (consulta pública DINS de la FAA, texto ICAO)
-          BUA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-          curl -sS -A "$BUA" "https://www.notams.faa.gov/dinsQueryWeb/queryRetrievalMapAction.do?reportType=Raw&retrieveLocId=LEBZ+LPBJ+LEMO&actionType=notamRetrievalByICAOs&submit=View+NOTAMs" \
-            -w "\nHTTP %{http_code}\n" -o data/notam.html || true
-          python3 - <<'PY'
-          import re, html, pathlib
-          p = pathlib.Path("data/notam.html")
-          t = p.read_text(errors="ignore") if p.exists() else ""
-          pres = [html.unescape(re.sub(r"<[^>]+>", "", x)).strip() for x in re.findall(r"<PRE>(.*?)</PRE>", t, re.S | re.I)]
-          pres = [x for x in pres if re.search(r"[A-Z]\d{4}/\d{2}", x)]
-          print("NOTAM encontrados:", len(pres))
-          if pres or "notamRetrieval" in t:
-              pathlib.Path("data/notam.txt").write_text("\n\n".join(pres) + "\n")
-          p.unlink(missing_ok=True)
-          PY
 
           ls -la data
 

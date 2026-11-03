@@ -342,7 +342,7 @@ function lpbjStatus(s,e){
 }
 
 /* ---------- render ---------- */
-let OBS={},NOT={},loaded=false;
+let OBS={},NOT={},loaded=false,notamOk=false;
 function render(){
   const cards=$("cards"),sum=$("summary");if(!win.s)return;cards.innerHTML="";sum.innerHTML="";
   const now=Date.now();
@@ -375,7 +375,7 @@ function render(){
         <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age">resaltado = ventana de vuelo</span></div>
           ${t?`<pre class="raw taf-raw">${tafLines}</pre>`:`<p class="empty">${loaded?"Sin TAF disponible.":"Cargando…"}</p>`}</div>
         <div class="sec"><div class="sec-h"><span class="label">NOTAM de aeródromo · últimas 24 h</span><span class="age">${notams.length} reciente${notams.length===1?"":"s"}${nHit?` · ${nHit} afecta${nHit===1?"":"n"} al vuelo`:""}</span></div>
-          ${notams.length?`<div class="notams">${notamsHtml}</div>`:`<p class="empty">${loaded?"Ningún NOTAM publicado en las últimas 24 h.":"Cargando…"}</p>`}</div>
+          ${notams.length?`<div class="notams">${notamsHtml}</div>`:`<p class="empty">${!loaded?"Cargando…":notamOk?"Ningún NOTAM publicado en las últimas 24 h.":`NOTAM no disponibles en vivo. Consulta <a href="${id==="LPBJ"?"https://ops.nav.pt/":"https://notampib.enaire.es/"}" target="_blank" rel="noopener">${id==="LPBJ"?"NAV Portugal":"ENAIRE"} ↗</a>`}</p>`}</div>
       </div>`;
     cards.appendChild(el);
   }
@@ -390,7 +390,7 @@ async function load(){
     const m=res[0].value||"",t=res[1].value||"";
     OBS=parseObs(m.split("\n").map(l=>l.trim()&&!/^(METAR|SPECI)/.test(l)?"METAR "+l:l).join("\n")+"\n"+t.replace(/\r/g,"").split(/\n(?=TAF|[A-Z]{4} \d{6}Z)/).map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l).join("\n"));
   }
-  if(res[2].status==="fulfilled")NOT=parseNotamData(res[2].value);
+  notamOk=res[2].status==="fulfilled";if(notamOk)NOT=parseNotamData(res[2].value);
   loaded=true;
   const b=$("liveBadge");
   if(ok){b.className="livebadge ok";b.lastChild.textContent=" En vivo · "+new Date().toISOString().slice(11,16)+"Z";$("offline").hidden=true;}
