@@ -11,10 +11,11 @@
 :root{
   --bg:#eef1f4; --panel:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d3dae2; --accent:#1f5fa8; --field:#f6f8fa; --hl:#fff3c4;
   --blu:#2f6fd6; --wht:#e9edf1; --grn:#2e9a4a; --ylo:#e7c21b; --amb:#ee8a12; --red:#d0312d; --dark:#18212b; --off:#7b8794; --warn:#c42b27;
+  --nbg:#f4efe4; --nline:#d9cfb8; --nink:#4a3f2a;
   --display:"Archivo",system-ui,sans-serif; --body:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1319;--panel:#161f29;--ink:#e6ebf0;--muted:#93a1b0;--line:#283441;--accent:#6aa5ec;--field:#0f171f;--hl:#3a3212;--wht:#d9dee4;--off:#5f6c79;--warn:#ff6b63;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0d1319;--panel:#161f29;--ink:#e6ebf0;--muted:#93a1b0;--line:#283441;--accent:#6aa5ec;--field:#0f171f;--hl:#3a3212;--wht:#d9dee4;--off:#5f6c79;--warn:#ff6b63;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1319;--panel:#161f29;--ink:#e6ebf0;--muted:#93a1b0;--line:#283441;--accent:#6aa5ec;--field:#0f171f;--hl:#3a3212;--wht:#d9dee4;--off:#5f6c79;--warn:#ff6b63;--nbg:#1f1b13;--nline:#4a4030;--nink:#e7d9b9;color-scheme:dark}}
+:root[data-theme="dark"]{--nbg:#1f1b13;--nline:#4a4030;--nink:#e7d9b9;--bg:#0d1319;--panel:#161f29;--ink:#e6ebf0;--muted:#93a1b0;--line:#283441;--accent:#6aa5ec;--field:#0f171f;--hl:#3a3212;--wht:#d9dee4;--off:#5f6c79;--warn:#ff6b63;color-scheme:dark}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
@@ -98,6 +99,21 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .age{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
 .age.stale{color:var(--warn);font-weight:700}
 .empty{color:var(--muted);font-size:.86rem;margin:0}
+.nblock{border-top:2px solid var(--nline);background:var(--nbg)}
+.nblock summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:10px 14px}
+.nblock summary::-webkit-details-marker{display:none}
+.nblock summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ntag{font:800 .72rem var(--mono);letter-spacing:.14em;background:var(--nink);color:var(--nbg);padding:3px 8px;border-radius:3px}
+.nb{font:700 .76rem var(--mono);padding:3px 8px;border-radius:12px;border:1px solid transparent;white-space:nowrap}
+.nb.new{background:var(--amb);color:var(--dark)}
+.nb.hit{background:var(--warn);color:#fff}
+.nb.ok{border-color:var(--nline);color:var(--nink)}
+.nb.muted{color:var(--muted)}
+.chev{margin-left:auto;width:9px;height:9px;border-right:2px solid var(--nink);border-bottom:2px solid var(--nink);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.nblock[open] .chev{transform:rotate(-135deg) translateY(-2px)}
+.nbody{padding:0 14px 14px;display:grid;gap:10px}
+.nblock .notam{background:var(--panel)}
+.nblock .notam.hit{background:var(--hl)}
 .notams{display:grid;gap:8px}
 .notam{border-left:3px solid var(--line);background:var(--field);border-radius:0 4px 4px 0;padding:7px 9px;display:grid;gap:4px;min-width:0}
 .notam.hit{border-left:6px solid var(--warn);background:var(--hl)}
@@ -146,6 +162,43 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 .links a span{color:var(--muted);font-size:.78rem}
 .links a:hover{border-color:var(--accent)}
 .note{font-size:.8rem;color:var(--muted);margin:0}
+.brand{all:unset;cursor:pointer;display:block;border-radius:4px}
+.brand:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.brand .qm{display:inline-grid;place-items:center;width:1.15em;height:1.15em;margin-left:.35em;border-radius:50%;background:var(--accent);color:var(--panel);font:800 .62em var(--body);vertical-align:.25em}
+.brand:hover .qm{filter:brightness(1.15)}
+.help{position:fixed;inset:0;z-index:30;background:rgba(8,12,17,.55);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.help[hidden]{display:none}
+.help-card{background:var(--panel);color:var(--ink);border-radius:8px;width:min(880px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+.help-top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.help-top h2{margin:0;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.5rem}
+.help-x{border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:4px;width:34px;height:34px;padding:0;font-size:1rem;cursor:pointer}
+.help-body{overflow:auto;padding:6px 18px 22px;display:grid;gap:4px}
+.hs{display:grid;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.hs:last-child{border-bottom:0}
+.hs h3{margin:0;display:flex;align-items:center;gap:10px;font-size:1.05rem}
+.hn{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--panel);font:800 .78rem var(--mono)}
+.hp{margin:0;max-width:70ch}
+.hl{margin:0;padding-left:20px;display:grid;gap:5px;max-width:72ch}
+.hsvg{width:100%;max-width:640px;height:auto}
+.s-bg{fill:var(--bg)}.s-bar{fill:var(--panel);stroke:var(--line)}.s-fl{fill:var(--field);stroke:var(--line)}
+.s-chip{fill:var(--blu)}.s-card rect{fill:var(--panel);stroke:var(--line)}.s-raw rect{fill:var(--field)}
+.s-not rect{fill:var(--nbg)}.s-map rect{fill:var(--field);stroke:var(--line)}
+.s-t{font:800 13px var(--display);fill:var(--ink)}.s-s{font:600 10px var(--mono);fill:var(--muted)}
+.s-call circle{fill:var(--accent)}.s-cn text{font:800 12px var(--mono);fill:var(--panel);text-anchor:middle}
+.hdemo .tp{display:inline-flex;pointer-events:none}
+.hcol{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.hcol div{display:flex;align-items:center;gap:8px;font-size:.8rem;background:var(--field);border-radius:4px;padding:5px}
+.hcol span{font-family:var(--mono);color:var(--muted)}
+.hcases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.hcase{display:grid;gap:4px;align-content:start;background:var(--field);border-radius:6px;padding:10px}
+.hcase .lbar{margin:6px 0 2px;background:var(--panel)}
+.hcase.off{opacity:.6;filter:grayscale(.7)}
+.hdn{border:1px solid var(--nline);border-radius:5px}
+.hsum{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:10px 14px}
+.ht{border-collapse:collapse;font-size:.88rem}
+.ht td{padding:5px 14px 5px 0;border-bottom:1px solid var(--line)}
+.ht td:last-child{font-family:var(--mono);color:var(--muted)}
+@media (max-width:700px){.help{padding:0}.help-card{border-radius:0;height:100%}.hcol{grid-template-columns:repeat(2,minmax(0,1fr))}.hcases{grid-template-columns:1fr}}
 @media (min-width:1600px){body{font-size:16px}}
 @media (max-width:1199px){
   .grid{grid-template-columns:1fr}
@@ -175,7 +228,7 @@ html{scroll-behavior:smooth}
 
 <div class="top">
   <div class="in top-in">
-    <h1><small>Meteorología aeronáutica</small>Panel meteo</h1>
+    <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><small>Meteorología aeronáutica</small>Panel meteo<span class="qm" aria-hidden="true">?</span></button></h1>
     <nav class="summary" id="summary" aria-label="Resumen por aeródromo"></nav>
     <span class="livebadge" id="liveBadge"><i></i> Conectando…</span>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
@@ -216,6 +269,116 @@ html{scroll-behavior:smooth}
       <div class="row"><span class="note">AEMET · vía @meteolemobot · toca para ampliar</span></div>
     </div>
   </section>
+</div>
+<div class="help" id="help" hidden>
+  <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-top">
+      <h2 id="helpTitle">Cómo usar el panel</h2>
+      <button type="button" class="help-x" id="helpClose" aria-label="Cerrar instrucciones">✕</button>
+    </div>
+    <div class="help-body">
+
+      <section class="hs">
+        <h3><span class="hn">1</span>Qué hay en la página</h3>
+        <svg class="hsvg" viewBox="-30 0 630 300" role="img" aria-label="Esquema de la página">
+          <rect x="1" y="1" width="598" height="298" rx="8" class="s-bg"/>
+          <rect x="12" y="12" width="576" height="30" rx="4" class="s-bar"/>
+          <text x="24" y="32" class="s-t">Panel meteo</text>
+          <rect x="190" y="19" width="56" height="16" rx="3" class="s-chip"/><rect x="252" y="19" width="56" height="16" rx="3" class="s-chip"/><rect x="314" y="19" width="56" height="16" rx="3" class="s-chip"/>
+          <text x="560" y="32" class="s-t" text-anchor="end">20:43 Z</text>
+          <rect x="12" y="48" width="576" height="24" rx="4" class="s-fl"/>
+          <text x="24" y="64" class="s-s">Inicio ‹ día › 08:45 Z   ·   Fin ‹ día › 10:45 Z</text>
+          <g class="s-card"><rect x="12" y="80" width="184" height="128" rx="5"/><rect x="204" y="80" width="184" height="128" rx="5"/><rect x="396" y="80" width="192" height="128" rx="5"/></g>
+          <g class="s-raw"><rect x="22" y="104" width="164" height="14" rx="2"/><rect x="22" y="126" width="164" height="30" rx="2"/><rect x="214" y="104" width="164" height="14" rx="2"/><rect x="214" y="126" width="164" height="30" rx="2"/><rect x="406" y="104" width="172" height="14" rx="2"/><rect x="406" y="126" width="172" height="30" rx="2"/></g>
+          <g class="s-not"><rect x="13" y="186" width="182" height="21"/><rect x="205" y="186" width="182" height="21"/><rect x="397" y="186" width="190" height="21"/></g>
+          <text x="22" y="200" class="s-s">NOTAM ▾</text><text x="214" y="200" class="s-s">NOTAM ▾</text><text x="406" y="200" class="s-s">NOTAM ▾</text>
+          <g class="s-map"><rect x="12" y="216" width="184" height="74" rx="5"/><rect x="204" y="216" width="184" height="74" rx="5"/><rect x="396" y="216" width="192" height="74" rx="5"/></g>
+          <text x="104" y="257" class="s-s" text-anchor="middle">Significativo</text><text x="296" y="257" class="s-s" text-anchor="middle">Satélite</text><text x="492" y="257" class="s-s" text-anchor="middle">Colores OTAN</text>
+          <g class="s-call"><circle cx="-15" cy="27" r="11"/><circle cx="-15" cy="60" r="11"/><circle cx="-15" cy="144" r="11"/><circle cx="-15" cy="196" r="11"/><circle cx="-15" cy="253" r="11"/></g>
+          <g class="s-cn"><text x="-15" y="31">1</text><text x="-15" y="64">2</text><text x="-15" y="148">3</text><text x="-15" y="200">4</text><text x="-15" y="257">5</text></g>
+        </svg>
+        <ol class="hl">
+          <li><b>Barra superior:</b> resumen de colores de cada aeródromo (METAR · TAF), estado de los datos y hora UTC. Pulsa un aeródromo para ir a su tarjeta.</li>
+          <li><b>Ventana de vuelo:</b> inicio y fin del vuelo en Z. Todo lo demás se calcula con estas horas.</li>
+          <li><b>Tarjetas de aeródromo:</b> METAR y TAF en bruto con su color OTAN.</li>
+          <li><b>NOTAM:</b> plegados; solo avisan de lo importante.</li>
+          <li><b>Mapas:</b> significativo de baja cota, satélite y colores OTAN.</li>
+        </ol>
+      </section>
+
+      <section class="hs">
+        <h3><span class="hn">2</span>Ventana de vuelo</h3>
+        <div class="hdemo"><div class="tp" aria-hidden="true"><span class="day"><button type="button" tabindex="-1">‹</button><span class="dd">mié, 04/11</span><button type="button" tabindex="-1">›</button></span><span class="f"><input value="08" tabindex="-1" readonly><span class="st"><button type="button" tabindex="-1">▲</button><button type="button" tabindex="-1">▼</button></span></span><span class="sep">:</span><span class="f"><input value="45" tabindex="-1" readonly><span class="st"><button type="button" tabindex="-1">▲</button><button type="button" tabindex="-1">▼</button></span></span><span class="z">Z</span></div></div>
+        <ul class="hl">
+          <li><b>‹ ›</b> cambia el día · <b>▲▼</b> suma o resta 1 h o 5 min.</li>
+          <li>También puedes <b>pulsar el número y teclearlo</b>; las flechas del teclado funcionan igual.</li>
+          <li>Al mover el inicio, el fin se mueve con él (se mantiene la duración). <b>Desde ahora</b> pone un vuelo de 2 h desde la hora actual.</li>
+        </ul>
+      </section>
+
+      <section class="hs">
+        <h3><span class="hn">3</span>Aeródromos y colores OTAN</h3>
+        <p class="hp">Pulsa el nombre de una tarjeta para elegir otro aeródromo de España. Cada tarjeta lleva dos colores: <b>METAR</b> (ahora) y <b>TAF</b> (el peor tramo dentro de tu vuelo). Se toma el peor de visibilidad y techo (BKN, OVC o VV).</p>
+        <div class="hcol" id="helpLegend"></div>
+      </section>
+
+      <section class="hs">
+        <h3><span class="hn">4</span>TAF resaltado</h3>
+        <pre class="raw taf-raw" aria-hidden="true"><span class="tl bar-BLU hit">TAF LEMO 031400Z 0315/0415 23010KT CAVOK</span><span class="tl bar-WHT hit">TEMPO 0408/0412 6000 SHRA BKN025</span><span class="tl bar-GRN dim">BECMG 0414/0416 4000 BR BKN012</span></pre>
+        <ul class="hl">
+          <li>Cada tramo va en su línea, con su <b>color OTAN</b> en el borde.</li>
+          <li><b>Negrita y fondo amarillo</b>: tramos que coinciden con tu vuelo. Atenuados: fuera de tu ventana.</li>
+        </ul>
+      </section>
+
+      <section class="hs">
+        <h3><span class="hn">5</span>LPBJ como alternativo</h3>
+        <p class="hp">Beja abre L–J 0830–1715Z y V 0830–1230Z (invierno; en verano 1 h antes). Fines de semana y festivos, solo con PPR.</p>
+        <div class="hcases">
+          <div class="hcase"><b>Abierto todo el vuelo</b><span class="note">No aparece nada.</span><div class="lbar"><i class="op" style="left:20%;width:70%"></i><i class="fw" style="left:35%;width:30%"></i></div></div>
+          <div class="hcase"><b>Abre en la 1.ª hora</b><span class="note">Alerta: sal con otro alternativo y cambia a LPBJ cuando abra.</span><div class="lbar"><i class="op" style="left:45%;width:55%"></i><i class="fw" style="left:35%;width:40%"></i><i class="h1" style="left:35%;width:15%"></i></div></div>
+          <div class="hcase off"><b>No abre a tiempo</b><span class="note">NO DISPONIBLE: tarjeta apagada y motivo.</span><div class="lbar"><i class="op" style="left:75%;width:25%"></i><i class="fw" style="left:20%;width:35%"></i><i class="h1" style="left:20%;width:12%"></i></div></div>
+        </div>
+        <div class="lkey"><span><i class="op"></i>Abierto</span><span><i class="fw"></i>Tu vuelo</span><span><i class="h1"></i>1.ª hora</span></div>
+      </section>
+
+      <section class="hs">
+        <h3><span class="hn">6</span>NOTAM</h3>
+        <div class="nblock hdn" aria-hidden="true"><div class="hsum"><span class="ntag">NOTAM</span><span class="nb new">⚠ 1 nuevo · 24 h</span><span class="nb hit">2 afectan al vuelo</span><span class="nb muted">9 en vigor</span><span class="chev"></span></div></div>
+        <ul class="hl">
+          <li>Plegados por defecto. <b>⚠ nuevo</b>: publicado en las últimas 24 h. <b>Rojo</b>: cuántos están en vigor durante tu vuelo.</li>
+          <li>Pulsa la barra para verlos: primero los que afectan al vuelo.</li>
+          <li>Se omiten los de <b>áreas</b> (zonas restringidas, drones, láser, exhibiciones). Fuente: FAA, cada 30 min. Confirma siempre en ENAIRE o NAV Portugal.</li>
+        </ul>
+      </section>
+
+      <section class="hs">
+        <h3><span class="hn">7</span>Mapas</h3>
+        <ul class="hl">
+          <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z; <b>✈</b> marca la más cercana a tu despegue y se elige sola.</li>
+          <li><b>Satélite:</b> EUMETSAT, infrarrojo o visible, con tus aeródromos marcados.</li>
+          <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
+          <li><b>Toca un mapa</b> para verlo a pantalla completa; vuelve a tocar para cerrarlo.</li>
+        </ul>
+      </section>
+
+      <section class="hs">
+        <h3><span class="hn">8</span>Actualización de los datos</h3>
+        <table class="ht"><tbody>
+          <tr><td>METAR y TAF</td><td>cada 10 min</td></tr>
+          <tr><td>NOTAM</td><td>cada 30 min</td></tr>
+          <tr><td>Satélite</td><td>cada 10 min</td></tr>
+          <tr><td>Significativo y colores OTAN</td><td>cada hora</td></tr>
+        </tbody></table>
+        <ul class="hl">
+          <li><span class="livebadge ok"><i></i> En vivo</span> indica que los datos llegan bien. En rojo, no se han podido cargar.</li>
+          <li>Un METAR con más de 90 min aparece en <b style="color:var(--warn)">rojo · desactualizado</b>.</li>
+          <li>Si no ves un cambio, recarga la página.</li>
+        </ul>
+      </section>
+
+    </div>
+  </div>
 </div>
 
 <script>
@@ -362,7 +525,9 @@ function parseNotam(raw,issued){
   const c=raw.match(/C\)\s*(\d{10}|PERM)(\s*EST)?/)||[];
   const d=(raw.match(/D\)\s*([\s\S]*?)(?=\s[E]\))/)||[])[1];
   const e=(raw.match(/E\)\s*([\s\S]*?)(?=\s[FG]\)|\sCREATED:|$)/)||[])[1]||raw;
-  return {id,ad,from:nt(b),to:c[1]==="PERM"?"PERM":nt(c[1]),est:!!c[2],sched:d?d.trim():"",text:e.trim(),issued:issued||nt(b)};
+  const q=raw.match(/Q\)\s*[A-Z]{4}\/(Q[A-Z]{4})\/[^\/]*\/[^\/]*\/\s*([A-Z]+)\s*\//);
+  const area=q?(/^Q[RW]/.test(q[1])||!q[2].includes("A")):false; // NOTAM de áreas: restricciones (QR), avisos (QW) o sin ámbito de aeródromo
+  return {id,ad,q:q?q[1]:"",area,from:nt(b),to:c[1]==="PERM"?"PERM":nt(c[1]),est:!!c[2],sched:d?d.trim():"",text:e.trim(),issued:issued||nt(b)};
 }
 function parseNotamData(txt){
   const out={};let items=[];
@@ -430,9 +595,9 @@ function lpbjBar(s,e){
 function notamCard(n){
   const now=Date.now(),end=n.to==="PERM"?Infinity:n.to?+n.to:Infinity,hit=n.from?overlap(win.s,win.e,+n.from,end):false;
   const h=n.issued?Math.max(0,Math.round((now-n.issued)/H)):null,ago=h==null?"":h<48?`hace ${h} h`:`hace ${Math.round(h/24)} días`;
-  return `<div class="notam ${hit?"hit":""}"><div class="notam-h"><b>${esc(n.id)}</b>${hit?'<span class="tag aff">AFECTA AL VUELO</span>':''}${h!=null&&h<6?'<span class="tag new">NUEVO</span>':''}<span>${fmtZ(n.from)} → ${fmtZ(n.to)}${n.est?" EST":""}</span>${n.sched?`<span>${esc(n.sched)}</span>`:""}<span>${ago}</span></div><p>${esc(n.text)}</p></div>`;
+  return `<div class="notam ${hit?"hit":""}"><div class="notam-h"><b>${esc(n.id)}</b>${hit?'<span class="tag aff">AFECTA AL VUELO</span>':''}${h!=null&&h<24?'<span class="tag new">NUEVO</span>':''}<span>${fmtZ(n.from)} → ${fmtZ(n.to)}${n.est?" EST":""}</span>${n.sched?`<span>${esc(n.sched)}</span>`:""}<span>${ago}</span></div><p>${esc(n.text)}</p></div>`;
 }
-let OBS={},NOT={},loaded=false,notamOk=false;
+let OBS={},NOT={},loaded=false,notamOk=false;const NOPEN={};
 function render(){
   const cards=$("cards"),sum=$("summary");if(!win.s)return;cards.innerHTML="";sum.innerHTML="";
   const now=Date.now();
@@ -450,10 +615,9 @@ function render(){
     if(m&&m.at){const min=Math.round((now-m.at)/60000);stale=min>90;age="hace "+(min<120?min+" min":Math.round(min/60)+" h");}
     let worst=null;
     const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(hit&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}">${esc(g.line)}</span>`;}).join(""):"";
-    const notams=(NOT[id]||[]).filter(n=>n.issued&&now-n.issued<=24*H&&now-n.issued>=-H).sort((a,b)=>b.issued-a.issued);
-    const notamsHtml=notams.map(notamCard).join("");
-    const inForce=(NOT[id]||[]).filter(n=>!notams.includes(n)&&(!n.to||n.to==="PERM"||+n.to>now)).sort((a,b)=>{const ha=a.from&&overlap(win.s,win.e,+a.from,a.to==="PERM"||!a.to?Infinity:+a.to),hb=b.from&&overlap(win.s,win.e,+b.from,b.to==="PERM"||!b.to?Infinity:+b.to);return (hb-ha)||((b.issued||0)-(a.issued||0));});
-    const nHit=notams.filter(n=>n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to)).length;
+    const isHit=n=>!!(n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to));
+    const nlist=(NOT[id]||[]).filter(n=>!n.area&&(!n.to||n.to==="PERM"||+n.to>now)).sort((a,b)=>(isHit(b)-isHit(a))||((b.issued||0)-(a.issued||0)));
+    const nNew=nlist.filter(n=>n.issued&&now-n.issued<=24*H).length,nHit=nlist.filter(isHit).length;
     sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR">${m?m.cc:"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF en ventana">${worst||"—"}</span></a>`);
     const el=document.createElement("article");el.className="ad"+(closed?" closed":late?" late":"");el.id="ad-"+slot;
     el.innerHTML=`<div class="ad-head"><div class="ad-id"><label class="sr" for="adsel${slot}">Aeródromo ${slot+1}</label><select class="adsel" id="adsel${slot}" data-slot="${slot}" title="Cambiar aeródromo">${adOptions(id)}</select></div>
@@ -463,13 +627,18 @@ function render(){
           ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
         <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age">resaltado = ventana de vuelo</span></div>
           ${t?`<pre class="raw taf-raw">${tafLines}</pre>`:`<p class="empty">${loaded?"Sin TAF disponible.":"Cargando…"}</p>`}</div>
-        <div class="sec"><div class="sec-h"><span class="label">NOTAM de aeródromo · últimas 24 h</span><span class="age">${!notamOk?"":notams.length+" reciente"+(notams.length===1?"":"s")}${nHit?` · ${nHit} afecta${nHit===1?"":"n"} al vuelo`:""}</span></div>
-          ${notams.length?`<div class="notams">${notamsHtml}</div>`:`<p class="empty">${!loaded?"Cargando…":notamOk?"Ningún NOTAM publicado en las últimas 24 h.":`NOTAM no disponibles en vivo. Consulta <a href="${id.startsWith("LP")?"https://ops.nav.pt/":"https://notampib.enaire.es/"}" target="_blank" rel="noopener">${id.startsWith("LP")?"NAV Portugal":"ENAIRE"} ↗</a>`}</p>`}${(inForce.length?`<details class="allnotam"><summary>Ver todos los NOTAM en vigor (${inForce.length} más)</summary><div class="notams">${inForce.map(notamCard).join("")}</div></details>`:"")}</div>
-      </div>`;
+      </div>
+      <details class="nblock" data-slot="${slot}"${NOPEN[slot]?" open":""}>
+        <summary><span class="ntag">NOTAM</span>${!loaded?'<span class="nb muted">Cargando…</span>':!notamOk?'<span class="nb muted">No disponibles</span>':
+          `${nNew?`<span class="nb new">⚠ ${nNew} nuevo${nNew===1?"":"s"} · 24 h</span>`:""}${nHit?`<span class="nb hit">${nHit} afecta${nHit===1?"":"n"} al vuelo</span>`:'<span class="nb ok">Ninguno afecta al vuelo</span>'}<span class="nb muted">${nlist.length} en vigor</span>`}<span class="chev" aria-hidden="true"></span></summary>
+        <div class="nbody">${nlist.length?`<div class="notams">${nlist.map(notamCard).join("")}</div>`:`<p class="empty">${notamOk?"No hay NOTAM de aeródromo en vigor.":"No se han podido descargar los NOTAM."}</p>`}
+          <p class="note">Sin NOTAM de áreas (zonas restringidas, drones, avisos). Fuente: FAA. Confirma en <a href="${id.startsWith("LP")?"https://ops.nav.pt/":"https://notampib.enaire.es/"}" target="_blank" rel="noopener">${id.startsWith("LP")?"NAV Portugal":"ENAIRE"} ↗</a>.</p></div>
+      </details>`;
     cards.appendChild(el);
   });
   placeMarks();
 }
+$("cards").addEventListener("toggle",e=>{const d=e.target;if(d.classList&&d.classList.contains("nblock"))NOPEN[d.dataset.slot]=d.open;},true);
 $("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adsel");if(!sel)return;SLOTS[+sel.dataset.slot]=sel.value;ls.set("mp-ads",JSON.stringify(SLOTS));render();});
 
 /* ---------- carga de datos (archivos del repositorio, actualizados por GitHub Actions) ---------- */
@@ -555,6 +724,16 @@ function refreshSat(){
   const c=$("satCoast");c.onerror=()=>{c.hidden=true;};c.src=satUrl("backgrounds:ne_10m_coastline");
 }
 $("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";$("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo";refreshSat();});
+
+/* ---------- instrucciones ---------- */
+$("helpLegend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${n}</span><span>${n==="RED"?"&lt;800 m · &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
+let helpReturn=null;
+function openHelp(){helpReturn=document.activeElement;$("help").hidden=false;document.body.style.overflow="hidden";$("helpClose").focus();}
+function closeHelp(){$("help").hidden=true;document.body.style.overflow="";if(helpReturn)helpReturn.focus();}
+$("helpBtn").addEventListener("click",openHelp);
+$("helpClose").addEventListener("click",closeHelp);
+$("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- arranque ---------- */
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
