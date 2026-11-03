@@ -25,6 +25,7 @@ h1 small{display:block;font-size:.68rem;font-weight:700;letter-spacing:.12em;tex
 .summary{display:flex;gap:8px;flex-wrap:wrap}
 .sum{display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);font:700 .85rem var(--mono);border:1px solid var(--line);border-radius:4px;padding:4px 6px 4px 8px}
 .sum.off{opacity:.45}
+.sum.warnsum{border-color:var(--amb);box-shadow:inset 0 0 0 1px var(--amb)}
 .clock{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;line-height:1.2}
 .clock b{font-size:1.35rem;display:block}
 .clock span{color:var(--muted);font-size:.75rem}
@@ -42,12 +43,16 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .offline{border:1px solid var(--amb);background:var(--panel);border-radius:6px;padding:12px 14px;font-size:.9rem}
 .offline a{color:var(--accent);font-weight:700}
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
-.ad{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:grid;min-width:0;scroll-margin-top:140px;transition:opacity .2s}
+.ad{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr);min-width:0;scroll-margin-top:140px;transition:opacity .2s}
+.ad.late{box-shadow:inset 0 0 0 2px var(--amb)}
 .ad.closed{opacity:.5;filter:grayscale(.85)}
 .ad.closed .ad-head{background:repeating-linear-gradient(135deg,transparent 0 8px,var(--field) 8px 16px)}
 .ad-head{display:flex;justify-content:space-between;align-items:stretch;border-bottom:1px solid var(--line)}
-.ad-id{padding:10px 14px;min-width:0}
-.ad-id b{font-family:var(--display);font-stretch:78%;font-size:1.8rem;font-weight:800;display:block;line-height:1}
+.ad-id{padding:10px 14px;min-width:0;flex:1;display:flex;align-items:center}
+.adsel{font-family:var(--display);font-stretch:78%;font-size:1.6rem;font-weight:800;line-height:1.1;padding:2px 26px 2px 6px;margin-left:-6px;border:1px solid transparent;background-color:transparent;color:var(--ink);width:calc(100% + 6px);max-width:none;overflow:hidden;white-space:nowrap;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 13px) 55%,calc(100% - 8px) 55%;background-size:5px 5px;background-repeat:no-repeat;text-overflow:ellipsis}
+.adsel:hover{border-color:var(--line)}
+.adsel option,.adsel optgroup{font:600 .95rem var(--mono);color:var(--ink);background:var(--panel)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .ad-id span{font-size:.82rem;color:var(--muted)}
 .ccs{display:flex}
 .cc{min-width:78px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.45rem;background:var(--off);color:#fff;padding:4px 10px;line-height:1.1}
@@ -57,6 +62,8 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .ops{padding:8px 14px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:.84rem}
 .pill{font:800 .72rem var(--mono);letter-spacing:.06em;padding:3px 8px;border-radius:3px;background:var(--grn);color:#fff}
 .pill.no{background:var(--red)}
+.pill.warn{background:var(--amb);color:var(--dark)}
+.opswarn{flex-basis:100%;margin:2px 0 0;padding:6px 9px;border-left:4px solid var(--amb);background:var(--hl);border-radius:0 4px 4px 0;font-weight:700;font-size:.84rem;color:var(--ink)}
 .ops span{color:var(--muted)}
 .ad-body{display:grid;grid-template-columns:1fr;min-width:0}
 .sec{padding:12px 14px;display:grid;gap:10px;min-width:0;border-bottom:1px solid var(--line);align-content:start}
@@ -82,8 +89,8 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .tag{border-radius:3px;padding:0 5px;font-weight:800;font-size:.7rem}
 .tag.new{background:var(--accent);color:var(--panel)}
 .tag.aff{background:var(--warn);color:#fff}
-.bottom{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
-.live{position:relative;background:#05080b;border-radius:4px;overflow:hidden;aspect-ratio:800/629;max-width:100%}
+.bottom{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.live{position:relative;background:#05080b;border-radius:4px;overflow:hidden;aspect-ratio:800/480;max-width:100%}
 .live img{position:absolute;inset:0;width:100%;height:100%}
 .live .msg{position:absolute;inset:0;display:grid;place-items:center;color:#c9d3dd;font-size:.88rem;text-align:center;padding:20px}
 .mk{position:absolute;transform:translate(-50%,-130%);font:700 .7rem var(--mono);color:#fff;background:rgba(208,49,45,.9);padding:1px 5px;border-radius:3px;white-space:nowrap}
@@ -136,7 +143,7 @@ html{scroll-behavior:smooth}
 
 <div class="top">
   <div class="in top-in">
-    <h1><small>Meteorología aeronáutica</small>LEBZ · LPBJ · LEMO</h1>
+    <h1><small>Meteorología aeronáutica</small>Panel meteo</h1>
     <nav class="summary" id="summary" aria-label="Resumen por aeródromo"></nav>
     <span class="livebadge" id="liveBadge"><i></i> Conectando…</span>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
@@ -150,7 +157,7 @@ html{scroll-behavior:smooth}
 </div>
 
 <div class="wrap">
-  <div class="offline" id="offline" hidden>Esta vista no puede descargar datos en vivo. Abre el panel en <a href="https://jimmyx463.github.io/METPANEL/" target="_blank" rel="noopener">jimmyx463.github.io/METPANEL</a>, donde METAR, TAF, NOTAM y satélite se actualizan solos.</div>
+  <div class="offline" id="offline" hidden>Esta vista no puede descargar datos en vivo. Abre el panel en <a href="https://jimmyx463.github.io/METPANEL/" target="_blank" rel="noopener">jimmyx463.github.io/METPANEL</a>, donde METAR, TAF, mapas y satélite se actualizan solos.</div>
 
 
   <section class="grid" id="cards" aria-label="Aeródromos"></section>
@@ -164,37 +171,37 @@ html{scroll-behavior:smooth}
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Satélite · Meteosat IR 10.8 · EUMETSAT</span><span class="age" id="satAge"></span></div>
       <div class="live" id="live">
-        <img id="satLive" alt="Imagen satélite infrarroja del suroeste de la península">
+        <img id="satLive" alt="Imagen satélite de la península ibérica">
         <img id="satCoast" alt="" aria-hidden="true">
-        <span class="mk" style="left:45.4%;top:38.4%">LEBZ</span><span class="mk" style="left:29.6%;top:53.1%">LPBJ</span><span class="mk" style="left:62.6%;top:69.6%">LEMO</span>
+        <div id="marks"></div>
         <div class="msg" id="satMsg" hidden></div>
       </div>
       <div class="row"><button type="button" id="satLayer">Cambiar a visible</button><span class="note">Se renueva cada 10 min.</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
-      <div class="label">Código de colores OTAN</div>
-      <div class="legend" id="legend"></div>
-      <p class="note">Peor de visibilidad y techo (BKN, OVC o VV). El color TAF de cabecera es el peor tramo dentro de la ventana de vuelo.</p>
-      <p class="note"><b style="color:var(--ink)">Negrita resaltada</b>: tramos del TAF y NOTAM que coinciden con la ventana de vuelo.</p>
-      <div class="label" style="margin-top:4px">Fuentes oficiales</div>
-      <div class="links">
-        <a href="https://ama.aemet.es/" target="_blank" rel="noopener">AEMET AMA <span>METAR/TAF/mapas ↗</span></a>
-        <a href="https://notampib.enaire.es/" target="_blank" rel="noopener">ENAIRE NOTAM <span>LEBZ · LEMO ↗</span></a>
-        <a href="https://ops.nav.pt/" target="_blank" rel="noopener">NAV Portugal <span>LPBJ ↗</span></a>
-        <a href="https://view.eumetsat.int/productviewer?v=default" target="_blank" rel="noopener">EUMETSAT View <span>satélite ↗</span></a>
-      </div>
+      <div class="sec-h"><span class="label">Mapa de colores OTAN</span><span class="age" id="colAge"></span></div>
+      <div class="sigimg" id="colBox"><p class="note" id="colMsg">Cargando mapa…</p><img id="colImg" alt="Mapa de colores OTAN de las bases" hidden></div>
     </div>
   </section>
 </div>
 
 <script>
-const ADS={LEBZ:"Badajoz / Talavera la Real",LPBJ:"Beja (BA11)",LEMO:"Morón (Sevilla)"};
-const STATES=[["BLU",8000,2500],["WHT",5000,1500],["GRN",3700,700],["YLO",1600,300],["AMB",800,200],["RED",0,0]];
-const RANK=Object.fromEntries(STATES.map((s,i)=>[s[0],i]));
 const H=3600000;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const GROUPS=[
+ ["Península y Baleares",{LEAB:"Albacete (Los Llanos)",LERI:"Alcantarilla",LEAL:"Alicante-Elche",LEAM:"Almería",LEAS:"Asturias",LECO:"A Coruña",LEBZ:"Badajoz (Talavera la Real)",LEBL:"Barcelona-El Prat",LEBB:"Bilbao",LEBG:"Burgos",LECH:"Castellón",LERL:"Ciudad Real",LECV:"Colmenar Viejo",LEBA:"Córdoba",LEGT:"Getafe",LEGE:"Girona",LEGA:"Granada (Armilla)",LEGR:"Granada-Jaén",LEHC:"Huesca-Pirineos",LEIB:"Ibiza",LEJR:"Jerez",LELN:"León",LEDA:"Lleida-Alguaire",LELO:"Logroño-Agoncillo",LEMD:"Madrid-Barajas",LECU:"Madrid-Cuatro Vientos",LEMG:"Málaga",LEMH:"Menorca",LEMO:"Morón",LEMI:"Murcia (Corvera)",LEPA:"Palma de Mallorca",LEPP:"Pamplona",LERS:"Reus",LERT:"Rota",LESA:"Salamanca (Matacán)",LELC:"San Javier",LESO:"San Sebastián",LEXJ:"Santander",LEST:"Santiago",LEZL:"Sevilla",LETL:"Teruel",LETO:"Torrejón",LEVC:"Valencia",LEVD:"Valladolid",LEVX:"Vigo",LEVT:"Vitoria",LEZG:"Zaragoza"}],
+ ["Canarias",{GCFV:"Fuerteventura",GCLP:"Gran Canaria (Gando)",GCHI:"El Hierro",GCGM:"La Gomera",GCLA:"La Palma",GCRR:"Lanzarote",GCXO:"Tenerife Norte",GCTS:"Tenerife Sur"}],
+ ["Ceuta y Melilla",{GECE:"Ceuta (helipuerto)",GEML:"Melilla"}],
+ ["Portugal",{LPBJ:"Beja (BA11)"}]
+];
+const AIRPORTS=Object.assign({},...GROUPS.map(g=>g[1]));
+const DEFAULT_SLOTS=["LEBZ","LPBJ","LEMO"];
+let SLOTS=(()=>{try{const v=JSON.parse(ls.get("mp-ads")||"null");if(Array.isArray(v)&&v.length===3&&v.every(x=>AIRPORTS[x]))return v;}catch(e){}return DEFAULT_SLOTS.slice();})();
+const adOptions=sel=>GROUPS.map(([g,o])=>`<optgroup label="${g}">${Object.entries(o).map(([k,v])=>`<option value="${k}"${k===sel?" selected":""}>${k} · ${esc(v)}</option>`).join("")}</optgroup>`).join("");
+const STATES=[["BLU",8000,2500],["WHT",5000,1500],["GRN",3700,700],["YLO",1600,300],["AMB",800,200],["RED",0,0]];
+const RANK=Object.fromEntries(STATES.map((s,i)=>[s[0],i]));
 const p2=x=>String(x).padStart(2,"0");
 const fmtZ=d=>d==="PERM"?"PERM":d?p2(d.getUTCDate())+"/"+p2(d.getUTCMonth()+1)+" "+p2(d.getUTCHours())+p2(d.getUTCMinutes())+"Z":"—";
 const overlap=(a1,a2,b1,b2)=>a1<b2&&b1<a2;
@@ -281,7 +288,7 @@ function parseObs(text){
   const out={};
   for(let l of text.replace(/=/g,"\n").split(/\n(?=\s*(?:METAR|SPECI|TAF)\b)/)){
     l=l.replace(/\s+/g," ").trim();if(!l)continue;
-    const m=l.match(/\b(LEBZ|LPBJ|LEMO)\b/);if(!m)continue;const id=m[1];out[id]=out[id]||{};
+    const m=l.match(/^(?:METAR|SPECI|TAF)(?: AMD| COR)? ([A-Z]{4})\b/);if(!m)continue;const id=m[1];out[id]=out[id]||{};
     if(/^TAF\b/.test(l))out[id].taf=parseTaf(l);else if(!out[id].metar)out[id].metar=parseMetar(l);
   }
   return out;
@@ -312,7 +319,7 @@ function parseNotamData(txt){
   }catch(e){
     items=txt.split(/\n(?=\s*\(?[A-Z]\d{4}\/\d{2}\b)/).filter(x=>/[A-Z]\d{4}\/\d{2}/.test(x)).map(x=>parseNotam(x));
   }
-  for(const n of items){if(n.ad&&ADS[n.ad])(out[n.ad]=out[n.ad]||[]).push(n);}
+  for(const n of items){if(n.ad)(out[n.ad]=out[n.ad]||[]).push(n);}
   return out;
 }
 
@@ -336,10 +343,12 @@ function lpbjOpenIntervals(from,to){
   return res;
 }
 function lpbjStatus(s,e){
-  const iv=lpbjOpenIntervals(s,e);const ok=iv.some(([o,c])=>o<=s&&c>=e);
+  const iv=lpbjOpenIntervals(s,e);const full=iv.some(([o,c])=>o<=s&&c>=e);
+  const late=full?null:iv.find(([o,c])=>o>s&&o<=s+H&&c>=e);
+  const ok=full||!!late;
   const now=Date.now();const cur=iv.find(([o,c])=>o<=now&&c>now);
   const next=lpbjOpenIntervals(now,now+8*24*H).find(([o])=>o>now);
-  return {ok,openNow:!!cur,cur,next};
+  return {ok,late:late?late[0]:null,openNow:!!cur,cur,next};
 }
 
 /* ---------- render ---------- */
@@ -347,12 +356,13 @@ let OBS={},NOT={},loaded=false,notamOk=false;
 function render(){
   const cards=$("cards"),sum=$("summary");if(!win.s)return;cards.innerHTML="";sum.innerHTML="";
   const now=Date.now();
-  for(const id of Object.keys(ADS)){
+  SLOTS.forEach((id,slot)=>{
     const d=OBS[id]||{};const m=d.metar,t=d.taf;
-    let closed=false,ops="";
+    let closed=false,late=false,ops="";
     if(id==="LPBJ"){
-      const st=lpbjStatus(win.s,win.e);closed=!st.ok;
-      ops=`<div class="ops"><span class="pill ${st.ok?"":"no"}">${st.ok?"DISPONIBLE COMO ALTERNATIVO":"NO DISPONIBLE COMO ALTERNATIVO"}</span>
+      const st=lpbjStatus(win.s,win.e);closed=!st.ok;late=!!st.late;
+      ops=`<div class="ops"><span class="pill ${st.late?"warn":st.ok?"":"no"}">${st.late?"DISPONIBLE A PARTIR DE "+fmtZ(new Date(st.late)).slice(6):st.ok?"DISPONIBLE COMO ALTERNATIVO":"NO DISPONIBLE COMO ALTERNATIVO"}</span>
+        ${st.late?`<p class="opswarn">⚠ LPBJ está cerrado al despegue y abre a las ${fmtZ(new Date(st.late)).slice(6)}. Elige otro alternativo para la salida; a partir de esa hora puedes cambiar a LPBJ.</p>`:""}
         <span>${st.openNow?"Abierto ahora hasta "+fmtZ(new Date(st.cur[1])).slice(6):"Cerrado ahora"}${st.next&&!st.openNow?" · abre "+fmtZ(new Date(st.next[0])):""}</span>
         <span>L–J 0830–1715 · V 0830–1230 (UTC invierno) · fines de semana y festivos solo PPR</span></div>`;
     }
@@ -366,21 +376,23 @@ function render(){
       const h=Math.max(0,Math.round((now-n.issued)/H));
       return `<div class="notam ${hit?"hit":""}"><div class="notam-h"><b>${esc(n.id)}</b>${hit?'<span class="tag aff">AFECTA AL VUELO</span>':''}${h<6?'<span class="tag new">NUEVO</span>':''}<span>${fmtZ(n.from)} → ${fmtZ(n.to)}${n.est?" EST":""}</span>${n.sched?`<span>${esc(n.sched)}</span>`:""}<span>hace ${h} h</span></div><p>${esc(n.text)}</p></div>`;}).join("");
     const nHit=notams.filter(n=>n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to)).length;
-    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":""}" href="#ad-${id}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR">${m?m.cc:"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF en ventana">${worst||"—"}</span></a>`);
-    const el=document.createElement("article");el.className="ad"+(closed?" closed":"");el.id="ad-"+id;
-    el.innerHTML=`<div class="ad-head"><div class="ad-id"><b>${id}</b><span>${ADS[id]}</span></div>
+    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR">${m?m.cc:"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF en ventana">${worst||"—"}</span></a>`);
+    const el=document.createElement("article");el.className="ad"+(closed?" closed":late?" late":"");el.id="ad-"+slot;
+    el.innerHTML=`<div class="ad-head"><div class="ad-id"><label class="sr" for="adsel${slot}">Aeródromo ${slot+1}</label><select class="adsel" id="adsel${slot}" data-slot="${slot}" title="Cambiar aeródromo">${adOptions(id)}</select></div>
       <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}"><small>METAR</small>${m?m.cc:"—"}</div><div class="cc ${worst?"c-"+worst:""}"><small>TAF</small>${worst||"—"}</div></div></div>${ops}
       <div class="ad-body">
         <div class="sec"><div class="sec-h"><span class="label">METAR</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
           ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
         <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age">resaltado = ventana de vuelo</span></div>
           ${t?`<pre class="raw taf-raw">${tafLines}</pre>`:`<p class="empty">${loaded?"Sin TAF disponible.":"Cargando…"}</p>`}</div>
-        <div class="sec"><div class="sec-h"><span class="label">NOTAM de aeródromo · últimas 24 h</span><span class="age">${notams.length} reciente${notams.length===1?"":"s"}${nHit?` · ${nHit} afecta${nHit===1?"":"n"} al vuelo`:""}</span></div>
-          ${notams.length?`<div class="notams">${notamsHtml}</div>`:`<p class="empty">${!loaded?"Cargando…":notamOk?"Ningún NOTAM publicado en las últimas 24 h.":`NOTAM no disponibles en vivo. Consulta <a href="${id==="LPBJ"?"https://ops.nav.pt/":"https://notampib.enaire.es/"}" target="_blank" rel="noopener">${id==="LPBJ"?"NAV Portugal":"ENAIRE"} ↗</a>`}</p>`}</div>
+        <div class="sec"><div class="sec-h"><span class="label">NOTAM de aeródromo · últimas 24 h</span><span class="age">${!notamOk?"":notams.length+" reciente"+(notams.length===1?"":"s")}${nHit?` · ${nHit} afecta${nHit===1?"":"n"} al vuelo`:""}</span></div>
+          ${notams.length?`<div class="notams">${notamsHtml}</div>`:`<p class="empty">${!loaded?"Cargando…":notamOk?"Ningún NOTAM publicado en las últimas 24 h.":`NOTAM no disponibles en vivo. Consulta <a href="${id.startsWith("LP")?"https://ops.nav.pt/":"https://notampib.enaire.es/"}" target="_blank" rel="noopener">${id.startsWith("LP")?"NAV Portugal":"ENAIRE"} ↗</a>`}</p>`}</div>
       </div>`;
     cards.appendChild(el);
-  }
+  });
+  placeMarks();
 }
+$("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adsel");if(!sel)return;SLOTS[+sel.dataset.slot]=sel.value;ls.set("mp-ads",JSON.stringify(SLOTS));render();});
 
 /* ---------- carga de datos (archivos del repositorio, actualizados por GitHub Actions) ---------- */
 async function load(){
@@ -428,12 +440,35 @@ function renderSig(){
 let sigAuto=true;
 $("sigTabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sigSel=b.dataset.h;sigAuto=false;renderSig();});
 $("sigImg").addEventListener("click",()=>$("sigBox").classList.toggle("zoom"));
+$("colImg").addEventListener("click",()=>$("colBox").classList.toggle("zoom"));
+async function loadCol(){
+  let m=null;try{m=JSON.parse(await fetch("data/colores.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));}catch(e){}
+  const im=$("colImg");
+  if(!m||!m.file){im.hidden=true;$("colMsg").hidden=false;$("colMsg").textContent="Mapa de colores no disponible todavía.";$("colAge").textContent="";return;}
+  im.onload=()=>{im.hidden=false;$("colMsg").hidden=true;};
+  im.onerror=()=>{im.hidden=true;$("colMsg").hidden=false;$("colMsg").textContent="No se ha podido cargar la imagen.";};
+  const src="data/"+m.file+"?_="+m.received;if(im.getAttribute("src")!==src)im.src=src;
+  const min=Math.round((Date.now()-m.received*1000)/60000);
+  $("colAge").textContent="recibido hace "+(min<120?min+" min":Math.round(min/60)+" h");$("colAge").className="age"+(min>90?" stale":"");
+}
+
+/* ---------- posiciones de aeródromos (data/stations.json) ---------- */
+let POS={};
+async function loadStations(){
+  try{const j=JSON.parse(await fetch("data/stations.json?_="+Math.floor(Date.now()/86400000),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));
+    for(const st of (Array.isArray(j)?j:[]))if(st.icaoId&&st.lat!=null)POS[st.icaoId]={lat:+st.lat,lon:+st.lon};}catch(e){}
+  placeMarks();
+}
+function placeMarks(){
+  $("marks").innerHTML=SLOTS.map(id=>{const p=POS[id];if(!p||p.lat<BB.s||p.lat>BB.n||p.lon<BB.w||p.lon>BB.e)return "";
+    return `<span class="mk" style="left:${((p.lon-BB.w)/(BB.e-BB.w)*100).toFixed(1)}%;top:${((BB.n-p.lat)/(BB.n-BB.s)*100).toFixed(1)}%">${id}</span>`;}).join("");
+}
 
 /* ---------- satélite (EUMETSAT WMS) ---------- */
-const BBOX="35.5,-10,41,-3";
+const BB={s:35.5,w:-10,n:44.2,e:4.5};const BBOX=[BB.s,BB.w,BB.n,BB.e].join(",");
 const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
 let satMode="ir";
-const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+BBOX+"&width=800&height=629&_="+Math.floor(Date.now()/600000);
+const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+BBOX+"&width=800&height=480&_="+Math.floor(Date.now()/600000);
 function refreshSat(){
   const im=$("satLive"),msg=$("satMsg");let i=0;const list=LAYERS[satMode];
   im.onload=()=>{msg.hidden=true;$("satAge").textContent="cargada "+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
@@ -444,11 +479,10 @@ function refreshSat(){
 $("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";$("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo";refreshSat();});
 
 /* ---------- arranque ---------- */
-$("legend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${n}</span><span>${n==="RED"?"&lt;800 m o &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
 tick();setInterval(tick,1000);
-buildSelects();load();refreshSat();loadSig();
-setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSig,600000);setInterval(render,60000);
+buildSelects();load();refreshSat();loadSig();loadCol();loadStations();
+setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSig,600000);setInterval(loadCol,600000);setInterval(render,60000);
 </script>
 
 </body>

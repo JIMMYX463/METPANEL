@@ -21,15 +21,21 @@ jobs:
       - name: Descargar datos
         run: |
           mkdir -p data
-          IDS="LEBZ,LPBJ,LEMO"
+          IDS="LEAB,LERI,LEAL,LEAM,LEAS,LECO,LEBZ,LEBL,LEBB,LEBG,LECH,LERL,LECV,LEBA,LEGT,LEGE,LEGA,LEGR,LEHC,LEIB,LEJR,LELN,LEDA,LELO,LEMD,LECU,LEMG,LEMH,LEMO,LEMI,LEPA,LEPP,LERS,LERT,LESA,LELC,LESO,LEXJ,LEST,LEZL,LETL,LETO,LEVC,LEVD,LEVX,LEVT,LEZG,GCFV,GCLP,GCHI,GCGM,GCLA,GCRR,GCXO,GCTS,GECE,GEML,LPBJ"
           UA="METPANEL dashboard (github.com/JIMMYX463/METPANEL)"
           keep() { [ -s "$1.tmp" ] && mv "$1.tmp" "$1" || rm -f "$1.tmp"; }
 
           # METAR y TAF (aviationweather.gov)
-          curl -fsS -A "$UA" "https://aviationweather.gov/api/data/metar?ids=$IDS&format=raw&hours=3" -o data/metar.txt.tmp || true
+          curl -fsS -A "$UA" "https://aviationweather.gov/api/data/metar?ids=$IDS&format=raw&hours=2" -o data/metar.txt.tmp || true
           keep data/metar.txt
           curl -fsS -A "$UA" "https://aviationweather.gov/api/data/taf?ids=$IDS&format=raw" -o data/taf.txt.tmp || true
           keep data/taf.txt
+
+          # Posiciones de los aeródromos (para marcarlos en el satélite), una vez al día
+          if [ ! -s data/stations.json ] || [ $(( $(date +%s) - $(stat -c %Y data/stations.json) )) -gt 86400 ]; then
+            curl -fsS -A "$UA" "https://aviationweather.gov/api/data/stationinfo?ids=$IDS&format=json" -o data/stations.json.tmp || true
+            keep data/stations.json
+          fi
 
           ls -la data
 
