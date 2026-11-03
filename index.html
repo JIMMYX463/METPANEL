@@ -91,9 +91,6 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .tag.aff{background:var(--warn);color:#fff}
 .bottom{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
 .bottom .sec-h{flex-wrap:nowrap;min-height:1.4em}.bottom .sec-h .age{white-space:nowrap}
-.live .msg{position:absolute;inset:0;display:grid;place-items:center;color:#c9d3dd;font-size:.88rem;text-align:center;padding:20px}
-.mk{position:absolute;transform:translate(-50%,-130%);font:700 .7rem var(--mono);color:#fff;background:rgba(208,49,45,.9);padding:1px 5px;border-radius:3px;white-space:nowrap}
-.mk::after{content:"";position:absolute;left:50%;top:calc(100% + 4px);width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 2px #fff}
 .sigtabs{display:flex;gap:6px;flex-wrap:wrap}
 .sigtabs button[aria-selected="true"]{background:var(--accent);color:var(--panel)}
 .sigtabs button.near::after{content:" ✈";}
@@ -113,8 +110,6 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .mapframe .fmsg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;margin:0;background:var(--field)}
 .mapframe.zoom{position:fixed;inset:0;z-index:20;width:auto;aspect-ratio:auto;border-radius:0;border:0;background:rgba(0,0,0,.92)}
 .mapframe.zoom img{cursor:zoom-out}
-.live.mapframe{background:#05080b}
-.live.mapframe img{object-fit:fill;cursor:default}
 .legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .legend div{display:flex;align-items:center;gap:8px;font-size:.78rem;background:var(--field);border-radius:4px;padding:4px}
 .legend span{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted)}
@@ -183,13 +178,9 @@ html{scroll-behavior:smooth}
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Satélite · Meteosat</span><span class="age" id="satAge"></span></div>
-      <div class="live mapframe" id="live">
-        <img id="satLive" alt="Imagen satélite de la península ibérica">
-        <img id="satCoast" alt="" aria-hidden="true">
-        <div id="marks"></div>
-        <div class="msg" id="satMsg" hidden></div>
+      <div class="mapframe" id="live"><p class="note fmsg" id="satMsg">Cargando imagen…</p><img id="satLive" alt="Imagen satélite de la península ibérica" hidden>
       </div>
-      <div class="row"><button type="button" id="satLayer">Cambiar a visible</button><span class="note">EUMETSAT · se renueva cada 10 min</span></div>
+      <div class="row"><button type="button" id="satLayer">Ver visible</button><span class="note">vía @meteolemobot · toca para ampliar</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Mapa de colores OTAN</span><span class="age" id="colAge"></span></div>
@@ -420,7 +411,6 @@ function render(){
       </div>`;
     cards.appendChild(el);
   });
-  placeMarks();
 }
 $("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adsel");if(!sel)return;SLOTS[+sel.dataset.slot]=sel.value;ls.set("mp-ads",JSON.stringify(SLOTS));render();});
 
@@ -482,37 +472,31 @@ async function loadCol(){
   $("colAge").textContent="hace "+(min<120?min+" min":Math.round(min/60)+" h");$("colAge").className="age"+(min>90?" stale":"");
 }
 
-/* ---------- posiciones de aeródromos (data/stations.json) ---------- */
-let POS={};
-async function loadStations(){
-  try{const j=JSON.parse(await fetch("data/stations.json?_="+Math.floor(Date.now()/86400000),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));
-    for(const st of (Array.isArray(j)?j:[]))if(st.icaoId&&st.lat!=null)POS[st.icaoId]={lat:+st.lat,lon:+st.lon};}catch(e){}
-  placeMarks();
+/* ---------- satélite (imágenes /sat del bot, guardadas por GitHub Actions) ---------- */
+let SAT={},satMode=(ls.get("mp-sat")==="vis")?"vis":"ir";
+async function loadSat(){
+  try{SAT=JSON.parse(await fetch("data/sat.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));}catch(e){SAT={};}
+  renderSat();
 }
-function placeMarks(){
-  $("marks").innerHTML=SLOTS.map(id=>{const p=POS[id];if(!p||p.lat<BB.s||p.lat>BB.n||p.lon<BB.w||p.lon>BB.e)return "";
-    return `<span class="mk" style="left:${((p.lon-BB.w)/(BB.e-BB.w)*100).toFixed(1)}%;top:${((BB.n-p.lat)/(BB.n-BB.s)*100).toFixed(1)}%">${id}</span>`;}).join("");
+function renderSat(){
+  $("satLayer").textContent=satMode==="ir"?"Ver visible":"Ver infrarrojo";
+  const m=SAT[satMode]||SAT.ir||SAT.vis,im=$("satLive"),msg=$("satMsg");
+  if(!m){im.hidden=true;msg.hidden=false;msg.textContent=loaded?"Imagen satélite no disponible todavía.":"Cargando imagen…";$("satAge").textContent="";return;}
+  im.onload=()=>{im.hidden=false;msg.hidden=true;};
+  im.onerror=()=>{im.hidden=true;msg.hidden=false;msg.textContent="No se ha podido cargar la imagen.";};
+  const src="data/"+m.file+"?_="+m.received;if(im.getAttribute("src")!==src)im.src=src;
+  const min=Math.round((Date.now()-m.received*1000)/60000);
+  $("satAge").textContent=(SAT[satMode]?(satMode==="ir"?"IR":"visible"):"")+" · hace "+(min<120?min+" min":Math.round(min/60)+" h");
+  $("satAge").className="age"+(min>90?" stale":"");
 }
-
-/* ---------- satélite (EUMETSAT WMS) ---------- */
-const BB={s:35.0,w:-10,n:44.6,e:4.4};const BBOX=[BB.s,BB.w,BB.n,BB.e].join(",");
-const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
-let satMode="ir";
-const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+BBOX+"&width=900&height=600&_="+Math.floor(Date.now()/600000);
-function refreshSat(){
-  const im=$("satLive"),msg=$("satMsg");let i=0;const list=LAYERS[satMode];
-  im.onload=()=>{im.style.visibility='';msg.hidden=true;$("satAge").textContent=(satMode==="ir"?"IR 10.8 · ":"visible · ")+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
-  im.onerror=()=>{i++;if(i<list.length){im.src=satUrl(list[i]);}else{im.style.visibility='hidden';msg.hidden=false;msg.innerHTML='No se ha podido cargar la imagen.<br>Ábrela en EUMETSAT View.';$("satAge").textContent="";}};
-  im.src=satUrl(list[0]);
-  const c=$("satCoast");c.onerror=()=>{c.hidden=true;};c.src=satUrl("backgrounds:ne_10m_coastline");
-}
-$("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";$("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo";refreshSat();});
+$("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";ls.set("mp-sat",satMode);renderSat();});
+$("satLive").addEventListener("click",()=>$("live").classList.toggle("zoom"));
 
 /* ---------- arranque ---------- */
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
 tick();setInterval(tick,1000);
-buildSelects();load();refreshSat();loadSig();loadCol();loadStations();
-setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSig,600000);setInterval(loadCol,600000);setInterval(render,60000);
+buildSelects();load();loadSat();loadSig();loadCol();
+setInterval(load,300000);setInterval(loadSat,600000);setInterval(loadSig,600000);setInterval(loadCol,600000);setInterval(render,60000);
 </script>
 
 </body>

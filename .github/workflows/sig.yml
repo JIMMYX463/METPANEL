@@ -38,6 +38,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull -q --rebase origin main || true
-          git add data/ 2>/dev/null || true
-          git diff --cached --quiet || (git commit -m "Mapa significativo $(date -u +%d%H%MZ)" && git push)
+          git add data
+          git diff --cached --quiet && exit 0
+          git commit -q -m "Mapa significativo $(date -u +%d%H%MZ)"
+          for i in 1 2 3 4 5; do
+            git pull -q --rebase -X theirs origin main && git push -q && exit 0
+            sleep $((i*4))
+          done
+          exit 1
