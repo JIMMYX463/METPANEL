@@ -416,15 +416,15 @@ html{scroll-behavior:smooth}
       <section class="hs">
         <h3><span class="hn">8</span>Actualización de los datos</h3>
         <table class="ht"><thead><tr><th>Dato</th><th>Fuente</th><th>Se actualiza</th></tr></thead><tbody>
-          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>al entrar o recargar (directo) · cada 10 min (GitHub)</td></tr>
+          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>al entrar o recargar (directo) · cada 2 min (GitHub)</td></tr>
           <tr><td>NOTAM</td><td>FAA</td><td>cada 30 min</td></tr>
           <tr><td>Colores OTAN</td><td>AEMET · @meteolemobot</td><td>cada 30 min</td></tr>
           <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>cada hora</td></tr>
           <tr><td>Satélite</td><td>EUMETSAT (directo)</td><td>cada 10 min</td></tr>
         </tbody></table>
-        <p class="note">Un aviso externo (cron-job.org) lanza la descarga cada 10 min. Si ese aviso falla, GitHub la hace por su cuenta aproximadamente cada hora. Fíjate en la antigüedad que aparece junto a cada METAR y cada mapa.</p>
+        <p class="note">Un aviso externo (cron-job.org) lanza la descarga cada 2 min. Si ese aviso falla, GitHub la hace por su cuenta aproximadamente cada hora. Fíjate en la antigüedad que aparece junto a cada METAR y cada mapa.</p>
         <ul class="hl">
-          <li><span class="livebadge ok"><i></i> Directo</span>: METAR y TAF pedidos a aviationweather.gov en el momento de abrir o recargar la página. <span class="livebadge ok"><i></i> En vivo</span>: datos de la última descarga de GitHub (máx. ~10 min). En rojo, no se han podido cargar.</li>
+          <li><span class="livebadge ok"><i></i> Directo</span>: METAR y TAF pedidos a aviationweather.gov en el momento de abrir o recargar la página. <span class="livebadge ok"><i></i> En vivo</span>: datos de la última descarga de GitHub (un METAR nuevo aparece unos 3–5 min después de publicarse). En rojo, no se han podido cargar.</li>
           <li>Un METAR con más de 90 min aparece en <b style="color:var(--warn)">rojo · desactualizado</b>.</li>
           <li>Al <b>entrar, recargar o volver</b> a la página se carga siempre la última versión con los datos más recientes. Con la página abierta, comprueba si hay datos nuevos cada 5 min.</li>
         </ul>
@@ -835,7 +835,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041258";
+const BUILD="202611041710";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
