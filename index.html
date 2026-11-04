@@ -378,13 +378,13 @@ html{scroll-behavior:smooth}
       <section class="hs">
         <h3><span class="hn">8</span>Actualización de los datos</h3>
         <table class="ht"><thead><tr><th>Dato</th><th>Fuente</th><th>Se actualiza</th></tr></thead><tbody>
-          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>cada 10 min</td></tr>
-          <tr><td>NOTAM</td><td>FAA</td><td>cada 30 min (y 07 · y 37)</td></tr>
-          <tr><td>Colores OTAN</td><td>AEMET · @meteolemobot</td><td>cada 30 min (y 17 · y 47)</td></tr>
-          <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>cada hora (y 17)</td></tr>
-          <tr><td>Satélite</td><td>EUMETSAT</td><td>cada 10 min</td></tr>
+          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>≈ cada hora</td></tr>
+          <tr><td>NOTAM</td><td>FAA</td><td>≈ cada hora</td></tr>
+          <tr><td>Colores OTAN</td><td>AEMET · @meteolemobot</td><td>cada 30–60 min</td></tr>
+          <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>≈ cada hora</td></tr>
+          <tr><td>Satélite</td><td>EUMETSAT (directo)</td><td>cada 10 min</td></tr>
         </tbody></table>
-        <p class="note">Los horarios son aproximados: GitHub puede retrasar las descargas unos minutos.</p>
+        <p class="note">GitHub descarga los datos de forma automática pero con retrasos: en la práctica, una vez por hora aproximadamente. Fíjate en la antigüedad que aparece junto a cada METAR y cada mapa.</p>
         <ul class="hl">
           <li><span class="livebadge ok"><i></i> En vivo</span> indica que los datos llegan bien. En rojo, no se han podido cargar.</li>
           <li>Un METAR con más de 90 min aparece en <b style="color:var(--warn)">rojo · desactualizado</b>.</li>
@@ -778,7 +778,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041024";
+const BUILD="202611041112";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
