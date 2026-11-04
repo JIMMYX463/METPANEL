@@ -208,6 +208,20 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 .ht td:nth-child(2){color:var(--muted)}.ht td:last-child{font-family:var(--mono)}
 .ht{display:block;overflow-x:auto;max-width:100%}
 @media (max-width:700px){.help{padding:0}.help-card{border-radius:0;height:100%}.hcol{grid-template-columns:repeat(2,minmax(0,1fr))}.hcases{grid-template-columns:1fr}}
+.gate{position:fixed;inset:0;z-index:60;background:var(--bg);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.gate[hidden]{display:none}
+.gate-card{width:min(340px,100%);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:24px;display:grid;gap:8px;box-shadow:0 12px 40px rgba(0,0,0,.12)}
+.gate-crest{width:84px;height:auto;justify-self:center;margin-bottom:4px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.gate-t{text-align:center;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.6rem;line-height:1.1;margin-bottom:10px}
+.gate-t small{display:block;font-family:var(--body);font-stretch:100%;font-size:.66rem;letter-spacing:.12em;color:var(--muted)}
+.gate-card>label{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.gate-card input:not([type=checkbox]){font:600 1rem var(--mono);padding:10px 12px;border:1px solid var(--line);border-radius:5px;background:var(--field);color:var(--ink)}
+.gate-card input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.gate-card>label.gate-rem{display:flex;align-items:center;gap:8px;font-size:.86rem;font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink);margin:6px 0 4px}
+.gate-card button{font:700 .95rem var(--body);padding:11px;border-radius:5px;border:0;background:var(--accent);color:var(--panel);cursor:pointer}
+.gate-card button:disabled{opacity:.6;cursor:wait}
+.gate-err{margin:4px 0 0;color:var(--warn);font-weight:700;font-size:.86rem;text-align:center}
+.logout{font:600 .75rem var(--body);padding:4px 9px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer}
 @media (min-width:1600px){body{font-size:16px}}
 @media (max-width:1199px){
   .grid{grid-template-columns:1fr}
@@ -236,11 +250,25 @@ html{scroll-behavior:smooth}
 </head>
 <body>
 
+<div class="gate" id="gate">
+  <form class="gate-card" id="gateForm" autocomplete="on">
+    <img class="gate-crest" src="escudo.png" alt="Escudo del 232 Escuadrón «Patas Negras», Ala 23">
+    <div class="gate-t"><small>Meteorología aeronáutica</small>PANEL METEO</div>
+    <label for="gUser">Usuario</label>
+    <input id="gUser" name="username" autocomplete="username" autocapitalize="characters" spellcheck="false" required>
+    <label for="gPass">Contraseña</label>
+    <input id="gPass" name="password" type="password" autocomplete="current-password" required>
+    <label class="gate-rem"><input type="checkbox" id="gRem"> Recordar en este equipo</label>
+    <button type="submit" id="gBtn">Entrar</button>
+    <p class="gate-err" id="gErr" role="alert" hidden>Usuario o contraseña incorrectos.</p>
+  </form>
+</div>
 <div class="top">
   <div class="in top-in">
     <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><img class="crest" src="escudo.png" alt="Escudo del 232 Escuadrón «Patas Negras», Ala 23"><span class="bt"><small>Meteorología aeronáutica</small>PANEL METEO<span class="qm" aria-hidden="true">?</span></span></button></h1>
     <nav class="summary" id="summary" aria-label="Resumen por aeródromo"></nav>
     <span class="livebadge" id="liveBadge"><i></i> Conectando…</span>
+    <button type="button" class="logout" id="logoutBtn" title="Cerrar sesión">Salir</button>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
   </div>
   <div class="flight" id="flight"><div class="in flight-in">
@@ -268,7 +296,7 @@ html{scroll-behavior:smooth}
       <div class="live mapframe" id="live">
         <img id="satLive" alt="Imagen satélite de la península ibérica">
         <img id="satCoast" alt="" aria-hidden="true">
-        <img id="secOv" class="secov" src="data/sectores.png" alt="" aria-hidden="true" hidden>
+        <img id="secOv" class="secov" alt="" aria-hidden="true" hidden>
         <div id="marks"></div>
         <div class="msg" id="satMsg" hidden></div>
       </div>
@@ -315,6 +343,7 @@ html{scroll-behavior:smooth}
           <li><b>NOTAM:</b> plegados; solo avisan de lo importante.</li>
           <li><b>Mapas:</b> significativo de baja cota, satélite y colores OTAN.</li>
         </ol>
+        <p class="hp"><b>Acceso:</b> el panel pide usuario y contraseña al entrar; con ellos se descifra el mapa sectorial. Marca <b>Recordar en este equipo</b> para no tener que escribirlos cada vez, y pulsa <b>Salir</b> (arriba a la derecha) para cerrar la sesión en un equipo compartido.</p>
       </section>
 
       <section class="hs">
@@ -752,7 +781,6 @@ function placeOverlay(){
 function secReady(){$("secOv").dataset.ok="1";$("secBtn").hidden=false;placeOverlay();}
 $("secOv").addEventListener("load",secReady);
 $("secOv").addEventListener("error",()=>{$("secOv").hidden=true;});
-if($("secOv").complete&&$("secOv").naturalWidth)secReady();
 $("secBtn").addEventListener("click",()=>{showSec=!showSec;ls.set("mp-sec",showSec?"1":"0");placeOverlay();});
 $("satView").addEventListener("click",()=>{BB=BB===VIEWS.sec?VIEWS.pen:VIEWS.sec;ls.set("mp-view",BB===VIEWS.sec?"sec":"pen");refreshSat();placeMarks();placeOverlay();});
 const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
@@ -778,7 +806,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041112";
+const BUILD="202611041128";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
@@ -790,6 +818,47 @@ function refreshAll(){load();refreshSat();loadSig();loadCol();}
 let hiddenAt=0;
 document.addEventListener("visibilitychange",()=>{if(document.hidden)hiddenAt=Date.now();else if(Date.now()-hiddenAt>60000){checkVersion();refreshAll();}});
 window.addEventListener("pageshow",e=>{if(e.persisted){checkVersion();refreshAll();}});
+
+/* ---------- acceso: la clave (usuario + contraseña) descifra el mapa sectorial ---------- */
+const AUTH={"salt": "oHQBQq4Y4vjWNGj2aoL+gQ==", "iter": 250000, "iv": "i5/FBzRvzeto7diP", "ct": "YAnnnkOG3Hr5bNK7r9aBJWuU7UIrX109UOZN"};
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+let KEY=null;
+async function deriveKey(u,p){
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(u.trim().toUpperCase()+":"+p),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(AUTH.salt),iterations:AUTH.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},true,["decrypt"]);
+}
+async function keyOk(k){try{const t=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(AUTH.iv)},k,b64(AUTH.ct));return new TextDecoder().decode(t)==="METPANEL-OK";}catch(e){return false;}}
+async function unlockSectors(){
+  try{
+    const buf=new Uint8Array(await fetch("data/sectores.enc?_="+BUILD).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}));
+    const png=await crypto.subtle.decrypt({name:"AES-GCM",iv:buf.slice(0,12)},KEY,buf.slice(12));
+    $("secOv").src=URL.createObjectURL(new Blob([png],{type:"image/png"}));
+  }catch(e){}
+}
+function setLocked(locked){
+  $("gate").hidden=!locked;
+  for(const el of document.querySelectorAll(".top,.wrap"))el.inert=locked;
+  document.body.style.overflow=locked?"hidden":"";
+}
+async function enter(k,remember){
+  KEY=k;setLocked(false);
+  if(remember){try{const raw=await crypto.subtle.exportKey("raw",k);ls.set("mp-key",btoa(String.fromCharCode(...new Uint8Array(raw))));}catch(e){}}
+  unlockSectors();
+}
+$("gateForm").addEventListener("submit",async e=>{
+  e.preventDefault();$("gErr").hidden=true;$("gBtn").disabled=true;$("gBtn").textContent="Comprobando…";
+  const k=await deriveKey($("gUser").value,$("gPass").value).catch(()=>null);
+  if(k&&await keyOk(k)){$("gPass").value="";await enter(k,$("gRem").checked);}
+  else{$("gErr").hidden=false;$("gPass").select();}
+  $("gBtn").disabled=false;$("gBtn").textContent="Entrar";
+});
+$("logoutBtn").addEventListener("click",()=>{try{localStorage.removeItem("mp-key")}catch(e){}KEY=null;$("secOv").removeAttribute("src");$("secOv").hidden=true;$("secBtn").hidden=true;delete $("secOv").dataset.ok;setLocked(true);$("gUser").focus();});
+(async()=>{
+  setLocked(true);
+  const saved=ls.get("mp-key");
+  if(saved){try{const k=await crypto.subtle.importKey("raw",b64(saved),{name:"AES-GCM"},true,["decrypt"]);if(await keyOk(k)){await enter(k,false);return;}}catch(e){}}
+  $("gUser").focus();
+})();
 
 /* ---------- arranque ---------- */
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
