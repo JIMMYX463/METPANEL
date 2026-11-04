@@ -47,7 +47,7 @@ button.livebadge.busy i{animation:pulse .8s ease-in-out infinite alternate}
 @keyframes pulse{from{opacity:1}to{opacity:.25}}
 .livebadge i{width:8px;height:8px;border-radius:50%;background:var(--off)}
 .livebadge.ok i{background:var(--grn)}.livebadge.err i{background:var(--red)}
-.flight{border-top:1px solid var(--line);background:var(--field)}
+.flight{border-bottom:1px solid var(--line);background:var(--field)}
 .flight-in{padding-block:8px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
 .tpg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .tpl{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
@@ -144,6 +144,8 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .sigtabs{display:flex;gap:6px;flex-wrap:wrap}
 .sigtabs button[aria-selected="true"]{background:var(--accent);color:var(--panel)}
 .sigtabs button.near::after{content:" ✈";}
+.sigtabs button small{display:block;font:600 .62rem var(--mono);opacity:.8}
+.sigtabs button.old{border-style:dashed;opacity:.6}
 .lreason{flex-basis:100%;margin:0;font-weight:700;color:var(--ink)!important}
 .lbar{flex-basis:100%;position:relative;height:30px;margin:4px 0 16px;background:var(--field);border-radius:3px}
 .lbar i{position:absolute;top:0;bottom:0;display:block}
@@ -159,8 +161,11 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .mapframe img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;cursor:zoom-in}
 .mapframe .fmsg{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;margin:0;background:var(--field)}
 #live{background:#05080b}
-#live img{object-fit:fill;cursor:default}
+#live img{object-fit:fill;cursor:inherit}
 .secov{position:absolute;max-width:none;transform-origin:50% 50%;pointer-events:none;filter:drop-shadow(0 0 1px rgba(0,0,0,.95)) drop-shadow(0 0 1px rgba(0,0,0,.6))}
+#satPrec{opacity:.85}
+#live{cursor:zoom-in}
+#live.zoom{inset:auto;top:50%;left:50%;transform:translate(-50%,-50%);width:min(100vw,150vh);height:auto;aspect-ratio:3/2;cursor:zoom-out;background:#05080b;box-shadow:0 0 0 100vmax rgba(0,0,0,.92)}
 #live .msg{position:absolute;inset:0;display:grid;place-items:center;color:#c9d3dd;font-size:.88rem;text-align:center;padding:20px}
 .mk{position:absolute;transform:translate(-50%,-130%);font:700 .7rem var(--mono);color:#fff;background:rgba(208,49,45,.9);padding:1px 5px;border-radius:3px;white-space:nowrap}
 .mk::after{content:"";position:absolute;left:50%;top:calc(100% + 4px);width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 2px #fff}
@@ -296,13 +301,13 @@ html{scroll-behavior:smooth}
     <button type="button" class="logout" id="logoutBtn" title="Cerrar sesión">Salir</button>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
   </div>
+</div>
   <div class="flight" id="flight"><div class="in flight-in">
     <div class="tpg"><span class="tpl">Inicio vuelo</span><div class="tp" role="group" aria-label="Inicio del vuelo"><span class="day"><button type="button" data-k="S" data-u="d" data-n="-1" aria-label="Día anterior">‹</button><span class="dd" id="tpSd"></span><button type="button" data-k="S" data-u="d" data-n="1" aria-label="Día siguiente">›</button></span><span class="f"><input id="tpSh" data-k="S" data-f="h" inputmode="numeric" maxlength="2" aria-label="Inicio del vuelo: hora"><span class="st"><button type="button" data-k="S" data-u="h" data-n="1" aria-label="Sumar una hora">▲</button><button type="button" data-k="S" data-u="h" data-n="-1" aria-label="Restar una hora">▼</button></span></span><span class="sep">:</span><span class="f"><input id="tpSm" data-k="S" data-f="m" inputmode="numeric" maxlength="2" aria-label="Inicio del vuelo: minutos"><span class="st"><button type="button" data-k="S" data-u="m" data-n="1" aria-label="Sumar 5 minutos">▲</button><button type="button" data-k="S" data-u="m" data-n="-1" aria-label="Restar 5 minutos">▼</button></span></span><span class="z">Z</span></div></div>
     <div class="tpg"><span class="tpl">Fin vuelo</span><div class="tp" role="group" aria-label="Fin del vuelo"><span class="day"><button type="button" data-k="E" data-u="d" data-n="-1" aria-label="Día anterior">‹</button><span class="dd" id="tpEd"></span><button type="button" data-k="E" data-u="d" data-n="1" aria-label="Día siguiente">›</button></span><span class="f"><input id="tpEh" data-k="E" data-f="h" inputmode="numeric" maxlength="2" aria-label="Fin del vuelo: hora"><span class="st"><button type="button" data-k="E" data-u="h" data-n="1" aria-label="Sumar una hora">▲</button><button type="button" data-k="E" data-u="h" data-n="-1" aria-label="Restar una hora">▼</button></span></span><span class="sep">:</span><span class="f"><input id="tpEm" data-k="E" data-f="m" inputmode="numeric" maxlength="2" aria-label="Fin del vuelo: minutos"><span class="st"><button type="button" data-k="E" data-u="m" data-n="1" aria-label="Sumar 5 minutos">▲</button><button type="button" data-k="E" data-u="m" data-n="-1" aria-label="Restar 5 minutos">▼</button></span></span><span class="z">Z</span></div></div>
     <button type="button" id="fNow">Desde ahora</button>
     <span class="fl-sum" id="fSum"></span>
   </div></div>
-</div>
 
 <div class="wrap">
   <div class="offline" id="offline" hidden>Esta vista no puede descargar datos en vivo. Abre el panel en <a href="https://jimmyx463.github.io/METPANEL/" target="_blank" rel="noopener">jimmyx463.github.io/METPANEL</a>, donde METAR, TAF, mapas y satélite se actualizan solos.</div>
@@ -320,12 +325,13 @@ html{scroll-behavior:smooth}
       <div class="sec-h"><span class="label">Satélite · Meteosat</span><span class="age" id="satAge"></span></div>
       <div class="live mapframe" id="live">
         <img id="satLive" alt="Imagen satélite de la península ibérica">
+        <img id="satPrec" alt="" aria-hidden="true" hidden>
         <img id="satCoast" alt="" aria-hidden="true">
         <img id="secOv" class="secov" alt="" aria-hidden="true" hidden>
         <div id="marks"></div>
         <div class="msg" id="satMsg" hidden></div>
       </div>
-      <div class="row"><button type="button" id="satLayer">Cambiar a visible</button><button type="button" id="satView" aria-pressed="false">Zoom sectores</button><button type="button" id="secBtn" aria-pressed="true" hidden>Sectores ✓</button><span class="note">EUMETSAT · cada 10 min</span></div>
+      <div class="row"><button type="button" id="satLayer">Cambiar a infrarrojo + precipitación</button><span class="note" id="satLegend" hidden>Colores: precipitación estimada (H SAF)</span><button type="button" id="satView" aria-pressed="false">Zoom sectores</button><button type="button" id="secBtn" aria-pressed="true" hidden>Sectores ✓</button><span class="note">EUMETSAT · cada 10 min</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Mapa de colores OTAN</span><span class="age" id="colAge"></span></div>
@@ -423,8 +429,8 @@ html{scroll-behavior:smooth}
       <section class="hs">
         <h3><span class="hn">7</span>Mapas</h3>
         <ul class="hl">
-          <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z; <b>✈</b> marca la más cercana a tu despegue y se elige sola.</li>
-          <li><b>Satélite:</b> EUMETSAT, infrarrojo o visible, con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
+          <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z con la <b>fecha</b> de cada mapa; <b>✈</b> marca el más cercano a tu despegue y se elige solo. Una pestaña <b>discontinua</b> es un mapa anterior: aún no se ha publicado el de ese día.</li>
+          <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> lleva superpuesta en color la precipitación estimada. Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
           <li><b>Toca un mapa</b> para verlo a pantalla completa; vuelve a tocar para cerrarlo.</li>
         </ul>
@@ -791,9 +797,35 @@ async function load(){
   render();
 }
 let refreshing=false;
+/* Al pulsar «Actualizado»: recarga todo lo disponible y, si hay token de GitHub (cifrado con la clave
+   de acceso), pide a GitHub que descargue ya NOTAM y mapas; luego espera a que lleguen. */
+const GH_ENC=null;let GH_TOKEN=null,COLM=null;
+async function ghToken(){
+  if(GH_TOKEN||!GH_ENC||!KEY)return GH_TOKEN;
+  try{GH_TOKEN=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(GH_ENC.iv)},KEY,b64(GH_ENC.ct)));}catch(e){}
+  return GH_TOKEN;
+}
+const mapsStamp=()=>Math.max(0,...Object.values(SIGM).map(x=>x.received||0),(COLM&&COLM.received)||0);
+async function triggerMaps(){
+  const tok=await ghToken();if(!tok)return;
+  const before=mapsStamp();
+  try{
+    const r=await fetch("https://api.github.com/repos/JIMMYX463/METPANEL/actions/workflows/actualizar.yml/dispatches",{method:"POST",
+      headers:{"Accept":"application/vnd.github+json","Authorization":"Bearer "+tok,"X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"},
+      body:JSON.stringify({ref:"main",inputs:{forzar:"1"}})});
+    if(r.status!==204)return;
+  }catch(e){return;}
+  const b=$("liveBadge");b.classList.add("busy");b.lastChild.textContent=" Descargando mapas…";
+  for(let i=0;i<16;i++){ // hasta ~5 min
+    await new Promise(r=>setTimeout(r,20000));
+    await Promise.all([loadSig(),loadCol()]);
+    if(mapsStamp()>before)break;
+  }
+  await load();refreshSat();
+}
 async function manualRefresh(){
   if(refreshing)return;refreshing=true;paintBadge("busy");
-  try{await Promise.all([load(),loadSig(),loadCol(),Promise.resolve(refreshSat())]);}finally{refreshing=false;}
+  try{await Promise.all([load(),loadSig(),loadCol(),Promise.resolve(refreshSat())]);await triggerMaps();}finally{refreshing=false;}
 }
 
 /* ---------- mapa significativo (imágenes del bot, guardadas por GitHub Actions) ---------- */
@@ -803,24 +835,35 @@ async function loadSig(){
   catch(e){SIGM={};}
   renderSig();
 }
+function sigValid(h){ // fecha y hora de validez del mapa (si se ha leído la fecha impresa)
+  const m=SIGM[h];if(!m||!m.date)return null;
+  const [y,mo,d]=m.date.split("-").map(Number);return Date.UTC(y,mo-1,d,+h);
+}
 function nearestSig(){
   const hs=Object.keys(SIGM);if(!hs.length)return null;
   const t=win.s||Date.now();const d=new Date(t);
   let best=null,bd=Infinity;
-  for(const h of hs){for(const off of [-1,0,1]){const c=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+off,+h);const x=Math.abs(c-t);if(x<bd){bd=x;best=h;}}}
+  for(const h of hs){
+    const v=sigValid(h);
+    const cands=v!=null?[v]:[-1,0,1].map(off=>Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+off,+h));
+    for(const c of cands){const x=Math.abs(c-t);if(x<bd){bd=x;best=h;}}
+  }
   return best;
 }
+const sigOld=h=>{const v=sigValid(h);if(v==null)return false;const n=new Date();return v<Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate())&&v<Date.now()-6*H;}; // de un día anterior
+const sigLabel=h=>{const v=sigValid(h);return v==null?"":p2(new Date(v).getUTCDate())+"/"+p2(new Date(v).getUTCMonth()+1);};
 function renderSig(){
-  const hs=Object.keys(SIGM).sort();const near=nearestSig();
+  const hs=Object.keys(SIGM).sort((a,b)=>(sigValid(a)??+a*H)-(sigValid(b)??+b*H));const near=nearestSig();
   if(!hs.length){$("sigTabs").innerHTML="";$("sigImg").hidden=true;$("sigMsg").hidden=false;$("sigMsg").textContent=loaded?"Mapa significativo no disponible todavía.":"Cargando mapa…";return;}
   if(!sigSel||!SIGM[sigSel]||sigAuto)sigSel=near;
-  $("sigTabs").innerHTML=hs.map(h=>`<button type="button" role="tab" aria-selected="${h===sigSel}" class="${h===near?"near":""}" data-h="${h}">${h}Z</button>`).join("");
+  $("sigTabs").innerHTML=hs.map(h=>`<button type="button" role="tab" aria-selected="${h===sigSel}" class="${h===near?"near":""}${sigOld(h)?" old":""}" data-h="${h}" title="${sigOld(h)?"Mapa anterior: aún no se ha publicado el de este día":""}">${h}Z${sigLabel(h)?`<small>${sigLabel(h)}</small>`:""}</button>`).join("");
   const m=SIGM[sigSel];const im=$("sigImg");
   im.onload=()=>{im.hidden=false;$("sigMsg").hidden=true;};
   im.onerror=()=>{im.hidden=true;$("sigMsg").hidden=false;$("sigMsg").textContent="No se ha podido cargar la imagen.";};
   const src="data/"+m.file+"?_="+m.received;if(im.getAttribute("src")!==src)im.src=src;
   const min=Math.round((Date.now()-m.received*1000)/60000);
-  $("sigAge").textContent="hace "+(min<120?min+" min":Math.round(min/60)+" h");
+  $("sigAge").textContent=(sigLabel(sigSel)?sigLabel(sigSel)+" "+sigSel+"Z · ":"")+"hace "+(min<120?min+" min":Math.round(min/60)+" h");
+  $("sigAge").className="age"+(sigOld(sigSel)?" stale":"");
 }
 let sigAuto=true;
 $("sigTabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;sigSel=b.dataset.h;sigAuto=false;renderSig();});
@@ -828,7 +871,7 @@ $("sigImg").addEventListener("click",()=>$("sigBox").classList.toggle("zoom"));
 $("colImg").addEventListener("click",()=>$("colBox").classList.toggle("zoom"));
 async function loadCol(){
   let m=null;try{m=JSON.parse(await fetch("data/colores.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));}catch(e){}
-  const im=$("colImg");
+  COLM=m;const im=$("colImg");
   if(!m||!m.file){im.hidden=true;$("colMsg").hidden=false;$("colMsg").textContent="Mapa de colores no disponible todavía.";$("colAge").textContent="";return;}
   im.onload=()=>{im.hidden=false;$("colMsg").hidden=true;};
   im.onerror=()=>{im.hidden=true;$("colMsg").hidden=false;$("colMsg").textContent="No se ha podido cargar la imagen.";};
@@ -869,16 +912,22 @@ $("secOv").addEventListener("error",()=>{$("secOv").hidden=true;});
 $("secBtn").addEventListener("click",()=>{showSec=!showSec;ls.set("mp-sec",showSec?"1":"0");placeOverlay();});
 $("satView").addEventListener("click",()=>{BB=BB===VIEWS.sec?VIEWS.pen:VIEWS.sec;ls.set("mp-view",BB===VIEWS.sec?"sec":"pen");refreshSat();placeMarks();placeOverlay();});
 const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
-let satMode="ir";
+let satMode=ls.get("mp-sat")==="ir"?"ir":"vis";
+const PREC=["msg_fes:h60b","mtg_fd:h40b"];
 const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+[BB.s,BB.w,BB.n,BB.e].join(",")+"&width=900&height=600&_="+Math.floor(Date.now()/600000);
 function refreshSat(){
   const im=$("satLive"),msg=$("satMsg");let i=0;const list=LAYERS[satMode];
-  im.onload=()=>{im.style.visibility='';msg.hidden=true;$("satAge").textContent=(satMode==="ir"?"IR 10.8 · ":"visible · ")+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
+  im.onload=()=>{im.style.visibility='';msg.hidden=true;$("satAge").textContent=(satMode==="ir"?"IR 10.8 + precipitación · ":"visible · ")+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
   im.onerror=()=>{i++;if(i<list.length){im.src=satUrl(list[i]);}else{im.style.visibility='hidden';msg.hidden=false;msg.innerHTML='No se ha podido cargar la imagen.<br>Ábrela en EUMETSAT View.';$("satAge").textContent="";}};
   im.src=satUrl(list[0]);
   const c=$("satCoast");c.onerror=()=>{c.hidden=true;};c.src=satUrl("backgrounds:ne_10m_coastline");
+  const pr=$("satPrec");pr.hidden=satMode!=="ir";
+  if(satMode==="ir"){let j=0;pr.onerror=()=>{j++;if(j<PREC.length)pr.src=satUrl(PREC[j]);else pr.hidden=true;};pr.src=satUrl(PREC[0]);}
+  $("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo + precipitación";
+  $("satLegend").hidden=satMode!=="ir";
 }
-$("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";$("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo";refreshSat();});
+$("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";ls.set("mp-sat",satMode);refreshSat();});
+$("live").addEventListener("click",e=>{if(e.target.closest("button"))return;$("live").classList.toggle("zoom");});
 
 /* ---------- instrucciones ---------- */
 $("helpLegend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${VI(n)}</span><b>${n}</b><span>${n==="RED"?"&lt;800 m · &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
@@ -891,7 +940,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041727";
+const BUILD="202611041812";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
@@ -923,7 +972,7 @@ async function unlockSectors(){
 }
 function setLocked(locked){
   $("gate").hidden=!locked;
-  for(const el of document.querySelectorAll(".top,.wrap"))el.inert=locked;
+  for(const el of document.querySelectorAll(".top,.flight,.wrap"))el.inert=locked;
   document.body.style.overflow=locked?"hidden":"";
 }
 async function enter(k,remember){
