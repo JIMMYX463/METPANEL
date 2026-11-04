@@ -1,0 +1,87 @@
+name: Actualizar datos
+
+# Se lanza desde fuera cada 10 min (cron-job.org → workflow_dispatch).
+# El cron de GitHub queda solo como respaldo, porque GitHub lo retrasa mucho.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datos
+  cancel-in-progress: false
+
+jobs:
+  datos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: METAR y TAF
+        run: |
+          mkdir -p data
+          IDS="LEAB,LERI,LEAL,LEAM,LEAS,LECO,LEBZ,LEBL,LEBB,LEBG,LECH,LERL,LECV,LEBA,LEGT,LEGE,LEGA,LEGR,LEHC,LEIB,LEJR,LELN,LEDA,LELO,LEMD,LECU,LEMG,LEMH,LEMO,LEMI,LEPA,LEPP,LERS,LERT,LESA,LELC,LESO,LEXJ,LEST,LEZL,LETL,LETO,LEVC,LEVD,LEVX,LEVT,LEZG,GCFV,GCLP,GCHI,GCGM,GCLA,GCRR,GCXO,GCTS,GECE,GEML,LPBJ"
+          UA="METPANEL dashboard (github.com/JIMMYX463/METPANEL)"
+          keep() { [ -s "$1.tmp" ] && mv "$1.tmp" "$1" || rm -f "$1.tmp"; }
+          curl -fsS -A "$UA" "https://aviationweather.gov/api/data/metar?ids=$IDS&format=raw&hours=2" -o data/metar.txt.tmp || true
+          keep data/metar.txt
+          curl -fsS -A "$UA" "https://aviationweather.gov/api/data/taf?ids=$IDS&format=raw" -o data/taf.txt.tmp || true
+          keep data/taf.txt
+          if [ ! -s data/stations.json ]; then
+            curl -fsS -A "$UA" "https://aviationweather.gov/api/data/stationinfo?ids=$IDS&format=json" -o data/stations.json.tmp || true
+            keep data/stations.json
+          fi
+
+      - name: ¿Toca NOTAM o mapas?
+        id: toca
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, time, pathlib
+          now = time.time()
+          def age(path, key):
+              try:
+                  d = json.loads(pathlib.Path(path).read_text())
+                  v = d.get(key) if key else min(x["received"] for x in d.values())
+                  return now - float(v)
+              except Exception:
+                  return 1e9
+          print("notam=" + ("1" if age("data/notam.json", "fetched") > 25*60 else "0"))
+          print("colores=" + ("1" if age("data/colores.json", "received") > 25*60 else "0"))
+          print("sig=" + ("1" if age("data/sig.json", None) > 55*60 else "0"))
+          PY
+          cat "$GITHUB_OUTPUT"
+
+      - name: NOTAM
+        if: steps.toca.outputs.notam == '1'
+        run: |
+          pip install -q curl_cffi
+          python3 scripts/fetch_notam.py || true
+
+      - name: Mapas del bot (colores OTAN y significativo)
+        if: steps.toca.outputs.colores == '1' || steps.toca.outputs.sig == '1'
+        env:
+          TG_API_ID: ${{ secrets.TG_API_ID }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          TG_PHONE: ${{ secrets.TG_PHONE }}
+          TG_2FA: ${{ secrets.TG_2FA }}
+          SOLO_COLORES: ${{ steps.toca.outputs.sig == '1' && '' || '1' }}
+        run: |
+          pip install -q telethon cryptography
+          python3 scripts/tg_sig.py fetch || true
+
+      - name: Guardar cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet && exit 0
+          git commit -q -m "Datos $(date -u +%d%H%MZ)"
+          for i in 1 2 3 4 5; do
+            git pull -q --rebase -X theirs origin main && git push -q && exit 0
+            sleep $((i*4))
+          done
+          exit 1

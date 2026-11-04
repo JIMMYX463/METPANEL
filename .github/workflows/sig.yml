@@ -1,9 +1,6 @@
-name: Mapa significativo (Telegram)
+name: Telegram (inicio de sesión y prueba)
 
 on:
-  schedule:
-    - cron: "17 * * * *"
-    - cron: "47 * * * *"
   workflow_dispatch:
     inputs:
       modo:
