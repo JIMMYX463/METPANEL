@@ -221,6 +221,13 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 .gate-card button{font:700 .95rem var(--body);padding:11px;border-radius:5px;border:0;background:var(--accent);color:var(--panel);cursor:pointer}
 .gate-card button:disabled{opacity:.6;cursor:wait}
 .gate-err{margin:4px 0 0;color:var(--warn);font-weight:700;font-size:.86rem;text-align:center}
+.themebtn{width:32px;height:32px;padding:5px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--ink);cursor:pointer;display:inline-grid;place-items:center}
+.themebtn:hover{background:var(--field)}
+.themebtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.themebtn .fill{fill:currentColor;stroke:none}
+.themebtn .i-dark path{fill:currentColor}
+.themebtn g{display:none}
+.themebtn[data-mode="system"] .i-sys,.themebtn[data-mode="light"] .i-light,.themebtn[data-mode="dark"] .i-dark{display:inline}
 .logout{font:600 .75rem var(--body);padding:4px 9px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer}
 @media (min-width:1600px){body{font-size:16px}}
 @media (max-width:1199px){
@@ -249,6 +256,7 @@ html{scroll-behavior:smooth}
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
+<script>try{var t=localStorage.getItem("mp-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 
 <div class="gate" id="gate">
   <form class="gate-card" id="gateForm" autocomplete="on">
@@ -268,6 +276,7 @@ html{scroll-behavior:smooth}
     <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><img class="crest" src="escudo.png" alt="Escudo del 232 Escuadrón «Patas Negras», Ala 23"><span class="bt"><small>Meteorología aeronáutica</small>PANEL METEO<span class="qm" aria-hidden="true">?</span></span></button></h1>
     <nav class="summary" id="summary" aria-label="Resumen por aeródromo"></nav>
     <span class="livebadge" id="liveBadge"><i></i> Conectando…</span>
+    <button type="button" class="themebtn" id="themeBtn" aria-label="Tema: sistema" title="Tema: sistema"><svg viewBox="0 0 24 24" aria-hidden="true"><g class="i-sys"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="fill"/></g><g class="i-light"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g><g class="i-dark"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></g></svg></button>
     <button type="button" class="logout" id="logoutBtn" title="Cerrar sesión">Salir</button>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
   </div>
@@ -337,7 +346,7 @@ html{scroll-behavior:smooth}
           <g class="s-cn"><text x="-15" y="31">1</text><text x="-15" y="64">2</text><text x="-15" y="148">3</text><text x="-15" y="200">4</text><text x="-15" y="257">5</text></g>
         </svg>
         <ol class="hl">
-          <li><b>Barra superior:</b> resumen de colores de cada aeródromo (METAR · TAF), estado de los datos y hora UTC. Pulsa un aeródromo para ir a su tarjeta.</li>
+          <li><b>Barra superior:</b> resumen de colores de cada aeródromo (METAR · TAF), estado de los datos y hora UTC. Pulsa un aeródromo para ir a su tarjeta. El botón redondo cambia el tema: <b>sistema → claro → oscuro</b>.</li>
           <li><b>Ventana de vuelo:</b> inicio y fin del vuelo en Z. Todo lo demás se calcula con estas horas.</li>
           <li><b>Tarjetas de aeródromo:</b> METAR y TAF en bruto con su color OTAN.</li>
           <li><b>NOTAM:</b> plegados; solo avisan de lo importante.</li>
@@ -806,7 +815,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041138";
+const BUILD="202611041224";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
@@ -859,6 +868,16 @@ $("logoutBtn").addEventListener("click",()=>{try{localStorage.removeItem("mp-key
   if(saved){try{const k=await crypto.subtle.importKey("raw",b64(saved),{name:"AES-GCM"},true,["decrypt"]);if(await keyOk(k)){await enter(k,false);return;}}catch(e){}}
   $("gUser").focus();
 })();
+
+/* ---------- tema: sistema → claro → oscuro ---------- */
+const THEMES=["system","light","dark"],TLABEL={system:"sistema",light:"claro",dark:"oscuro"};
+function applyTheme(m){
+  if(m==="system")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",m);
+  const b=$("themeBtn");b.dataset.mode=m;b.title="Tema: "+TLABEL[m]+" (pulsa para cambiar)";b.setAttribute("aria-label",b.title);
+}
+let themeMode=(()=>{const t=ls.get("mp-theme");return t==="light"||t==="dark"?t:"system";})();
+applyTheme(themeMode);
+$("themeBtn").addEventListener("click",()=>{themeMode=THEMES[(THEMES.indexOf(themeMode)+1)%3];ls.set("mp-theme",themeMode==="system"?"":themeMode);applyTheme(themeMode);});
 
 /* ---------- arranque ---------- */
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
