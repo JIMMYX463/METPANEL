@@ -4,6 +4,10 @@ name: Actualizar datos
 # El cron de GitHub queda solo como respaldo, porque GitHub lo retrasa mucho.
 on:
   workflow_dispatch:
+    inputs:
+      forzar:
+        description: "1 = descargar ya NOTAM y todos los mapas"
+        default: "0"
   schedule:
     - cron: "23 * * * *"
 
@@ -38,6 +42,8 @@ jobs:
 
       - name: ¿Toca NOTAM o mapas?
         id: toca
+        env:
+          FORZAR: ${{ github.event.inputs.forzar }}
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json, time, pathlib
@@ -49,9 +55,11 @@ jobs:
                   return now - float(v)
               except Exception:
                   return 1e9
-          print("notam=" + ("1" if age("data/notam.json", "fetched") > 25*60 else "0"))
-          print("colores=" + ("1" if age("data/colores.json", "received") > 25*60 else "0"))
-          print("sig=" + ("1" if age("data/sig.json", None) > 55*60 else "0"))
+          import os
+          f = os.environ.get("FORZAR") == "1"
+          print("notam=" + ("1" if f or age("data/notam.json", "fetched") > 25*60 else "0"))
+          print("colores=" + ("1" if f or age("data/colores.json", "received") > 9*60 else "0"))
+          print("sig=" + ("1" if f or age("data/sig.json", None) > 25*60 else "0"))
           PY
           cat "$GITHUB_OUTPUT"
 
@@ -68,9 +76,10 @@ jobs:
           TG_API_HASH: ${{ secrets.TG_API_HASH }}
           TG_PHONE: ${{ secrets.TG_PHONE }}
           TG_2FA: ${{ secrets.TG_2FA }}
-          SOLO_COLORES: ${{ steps.toca.outputs.sig == '1' && '' || '1' }}
+          SOLO_COLORES: ${{ steps.toca.outputs.sig != '1' && '1' || '' }}
         run: |
-          pip install -q telethon cryptography
+          pip install -q telethon cryptography pillow
+          if [ "${{ steps.toca.outputs.sig }}" = "1" ]; then sudo apt-get install -y -qq tesseract-ocr >/dev/null 2>&1 || true; fi
           python3 scripts/tg_sig.py fetch || true
 
       - name: Guardar cambios

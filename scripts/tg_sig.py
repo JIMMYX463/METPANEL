@@ -5,6 +5,7 @@ Modos:
 Secretos: TG_API_ID, TG_API_HASH, TG_PHONE y, si tienes verificación en dos pasos, TG_2FA.
 Nunca imprime credenciales ni la sesión."""
 import asyncio, base64, hashlib, json, os, pathlib, re, subprocess, sys, time
+import datetime as dt
 from cryptography.fernet import Fernet
 from telethon import TelegramClient
 from telethon.sessions import StringSession
@@ -75,6 +76,24 @@ async def login():
     await client.disconnect()
 
 
+def chart_date(path):
+    """Lee la fecha impresa en el mapa significativo (DD/MM/AA) con OCR. Devuelve 'AAAA-MM-DD' o None."""
+    try:
+        from PIL import Image
+        im = Image.open(path).convert("L"); W, H = im.size
+        box = (int(W * 0.74), int(H * 0.14), int(W * 0.965), int(H * 0.215))
+        c = im.crop(box).resize(((box[2] - box[0]) * 3, (box[3] - box[1]) * 3), Image.LANCZOS).point(lambda v: 255 if v > 150 else 0)
+        tmp = "/tmp/sig_ocr.png"; c.save(tmp)
+        t = subprocess.run(["tesseract", tmp, "stdout", "--psm", "6"], capture_output=True, text=True).stdout
+        m = re.search(r"(\d{2})\s*/\s*(\d{2})\s*/\s*(\d{2})", t)
+        if not m:
+            return None
+        d = dt.date(2000 + int(m.group(3)), int(m.group(2)), int(m.group(1)))
+        return d.isoformat()
+    except Exception as e:
+        log("OCR:", repr(e)[:120]); return None
+
+
 async def ask(client, bot, cmd):
     """Envía un comando al bot y devuelve el primer mensaje con imagen de la respuesta."""
     sent = await client.send_message(bot, cmd)
@@ -112,8 +131,9 @@ async def fetch():
             continue
         out = pathlib.Path(f"data/sig_{hh}.jpg")
         await client.download_media(got, file=str(out))
-        meta[hh] = {"file": out.name, "received": int(got.date.timestamp()), "caption": (got.message or "")[:300]}
-        log(f"/sig {hh} ibe: imagen guardada ({out.stat().st_size} bytes)")
+        date = chart_date(out)
+        meta[hh] = {"file": out.name, "received": int(got.date.timestamp()), "date": date}
+        log(f"/sig {hh} ibe: imagen guardada ({out.stat().st_size} bytes) · fecha del mapa {date}")
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1))
     # Mapa de colores OTAN
     got = await ask(client, bot, "/colores")
