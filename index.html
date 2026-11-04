@@ -713,7 +713,7 @@ $("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adse
           3) archivos del repositorio que descarga GitHub cada pocos minutos.
    Siempre se queda con el METAR y el TAF más recientes de cada aeródromo. */
 const LIVE_URL="https://metpanel.djgarcia463.workers.dev/";
-const AVWX_ENC=null; // {iv,ct}: token de AVWX cifrado con AES-GCM y la clave de acceso
+const AVWX_ENC={"iv": "N4LdKts0BaF7zSfE", "ct": "sx0znIAfpI39YRQO/Q2L/J/NUTBZ5G+V9BtQ5JYxeTwkFLLaG0S2+Ey04eevzT5ZqqmAVJSJ8N9IJoM="}; // {iv,ct}: token de AVWX cifrado con AES-GCM y la clave de acceso
 let AVWX_TOKEN=null,dataAt=0;
 function obsFromText(m,t){
   return parseObs(m.split("\n").map(l=>l.trim()&&!/^(METAR|SPECI)/.test(l)?"METAR "+l:l).join("\n")+"\n"+t.replace(/\r/g,"").split(/\n(?=TAF|[A-Z]{4} \d{6}Z)/).map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l).join("\n"));
@@ -874,7 +874,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041715";
+const BUILD="202611041717";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
