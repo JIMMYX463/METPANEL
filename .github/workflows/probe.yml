@@ -1,0 +1,14 @@
+name: Prueba intermediario (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          date -u
+          echo "== worker"
+          curl -sS -m 30 -H "Origin: https://jimmyx463.github.io" "https://metpanel.djgarcia463.workers.dev/?ids=LEBZ,LPBJ,LEMO&_=$(date +%s)" | python3 -c "import sys,json;d=json.load(sys.stdin);print('fetched',d.get('fetched'));print(d.get('metar','')[:2000])"
+          echo "== aviationweather directo"
+          curl -sS -m 30 -A "METPANEL" "https://aviationweather.gov/api/data/metar?ids=LEBZ,LPBJ,LEMO&format=raw&hours=2"
