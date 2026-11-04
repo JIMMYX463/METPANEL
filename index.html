@@ -626,15 +626,20 @@ function render(){
     }
     let age="",stale=false;
     if(m&&m.at){const min=Math.round((now-m.at)/60000);stale=min>90;age="hace "+(min<120?min+" min":Math.round(min/60)+" h");}
-    let worst=null;
+    let worst=null,tafNear=false;
     const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(hit&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}">${esc(g.line)}</span>`;}).join(""):"";
+    if(t&&worst===null&&t.groups.length){ // la ventana cae fuera del TAF: usar el tramo o tramos más cercanos
+      const dist=g=>Math.max(0,+g.from-win.e,win.s-+g.to),dmin=Math.min(...t.groups.map(dist));
+      for(const g of t.groups)if(dist(g)===dmin&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;
+      tafNear=true;
+    }
     const isHit=n=>!!(n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to));
     const nlist=(NOT[id]||[]).filter(n=>!n.area&&(!n.to||n.to==="PERM"||+n.to>now)).sort((a,b)=>(isHit(b)-isHit(a))||((b.issued||0)-(a.issued||0)));
     const nNew=nlist.filter(n=>n.issued&&now-n.issued<=24*H).length,nHit=nlist.filter(isHit).length;
     sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR${m?" · "+m.cc:""}">${m?VI(m.cc):"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF en ventana${worst?" · "+worst:""}">${worst?VI(worst):"—"}</span></a>`);
     const el=document.createElement("article");el.className="ad"+(closed?" closed":late?" late":"");el.id="ad-"+slot;
     el.innerHTML=`<div class="ad-head"><div class="ad-id"><label class="sr" for="adsel${slot}">Aeródromo ${slot+1}</label><select class="adsel" id="adsel${slot}" data-slot="${slot}" title="Cambiar aeródromo">${adOptions(id)}</select></div>
-      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc:""}"><small>METAR</small>${m?VI(m.cc):"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst:""}"><small>TAF</small>${worst?VI(worst):"—"}</div></div></div>${ops}
+      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc:""}"><small>METAR</small>${m?VI(m.cc):"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst+(tafNear?" · el TAF no cubre tu ventana: tramo más cercano":""):""}"><small>TAF${tafNear?" ≈":""}</small>${worst?VI(worst):"—"}</div></div></div>${ops}
       <div class="ad-body">
         <div class="sec"><div class="sec-h"><span class="label">METAR</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
           ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
@@ -767,7 +772,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041012";
+const BUILD="202611041016";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
