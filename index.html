@@ -799,7 +799,7 @@ async function load(){
 let refreshing=false;
 /* Al pulsar «Actualizado»: recarga todo lo disponible y, si hay token de GitHub (cifrado con la clave
    de acceso), pide a GitHub que descargue ya NOTAM y mapas; luego espera a que lleguen. */
-const GH_ENC=null;let GH_TOKEN=null,COLM=null;
+const GH_ENC={"iv": "cI4PSfwwxB4dclVm", "ct": "bX+9B8ivbCIj6MWBN0kVuTuyiQDnaqgUNxNa+LDmand7KAJSJoTFqu542LqDKIgFunFeKXi+9A/e5UMk6wEZrhsy1LW70RPhn8bSMkQmAAvZslcTNgEpsKl/aTk2VeoSyo8dgWs/SlIBSQ3SNg=="};let GH_TOKEN=null,COLM=null;
 async function ghToken(){
   if(GH_TOKEN||!GH_ENC||!KEY)return GH_TOKEN;
   try{GH_TOKEN=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(GH_ENC.iv)},KEY,b64(GH_ENC.ct)));}catch(e){}
@@ -940,7 +940,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041812";
+const BUILD="202611041818";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
