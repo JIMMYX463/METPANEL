@@ -1,0 +1,15 @@
+name: Prueba CORS (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for u in "https://aviationweather.gov/api/data/metar?ids=LEBZ,LEMO&format=raw" "https://aviationweather.gov/api/data/taf?ids=LEBZ&format=raw"; do
+            echo "== $u"
+            curl -sS -D - -o /dev/null -H "Origin: https://jimmyx463.github.io" "$u" | grep -iE "^HTTP|access-control|cache-control"
+            echo "-- preflight"
+            curl -sS -D - -o /dev/null -X OPTIONS -H "Origin: https://jimmyx463.github.io" -H "Access-Control-Request-Method: GET" "$u" | grep -iE "^HTTP|access-control"
+          done
