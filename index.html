@@ -33,7 +33,11 @@ h1 small{display:block;font-size:.68rem;font-weight:700;letter-spacing:.12em;tex
 .clock{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;line-height:1.2}
 .clock b{font-size:1.35rem;display:block}
 .clock span{color:var(--muted);font-size:.75rem}
-.livebadge{display:inline-flex;align-items:center;gap:6px;font:600 .75rem var(--mono);color:var(--muted)}
+.livebadge{display:inline-flex;align-items:center;gap:6px;font:600 .75rem var(--mono);color:var(--muted);background:transparent;border:0;padding:0}
+button.livebadge{border:1px solid var(--line);border-radius:14px;padding:4px 10px;cursor:pointer}
+button.livebadge:hover{background:var(--field);color:var(--ink)}
+button.livebadge.busy i{animation:pulse .8s ease-in-out infinite alternate}
+@keyframes pulse{from{opacity:1}to{opacity:.25}}
 .livebadge i{width:8px;height:8px;border-radius:50%;background:var(--off)}
 .livebadge.ok i{background:var(--grn)}.livebadge.err i{background:var(--red)}
 .flight{border-top:1px solid var(--line);background:var(--field)}
@@ -275,7 +279,7 @@ html{scroll-behavior:smooth}
   <div class="in top-in">
     <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><img class="crest" src="escudo.png" alt="Escudo del 232 Escuadrón «Patas Negras», Ala 23"><span class="bt"><small>Meteorología aeronáutica</small>PANEL METEO<span class="qm" aria-hidden="true">?</span></span></button></h1>
     <nav class="summary" id="summary" aria-label="Resumen por aeródromo"></nav>
-    <span class="livebadge" id="liveBadge"><i></i> Conectando…</span>
+    <button type="button" class="livebadge" id="liveBadge" title="Pulsa para actualizar todos los datos y mapas"><i></i> Conectando…</button>
     <button type="button" class="themebtn" id="themeBtn" aria-label="Tema: sistema" title="Tema: sistema"><svg viewBox="0 0 24 24" aria-hidden="true"><g class="i-sys"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="fill"/></g><g class="i-light"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g><g class="i-dark"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></g></svg></button>
     <button type="button" class="logout" id="logoutBtn" title="Cerrar sesión">Salir</button>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
@@ -416,7 +420,7 @@ html{scroll-behavior:smooth}
       <section class="hs">
         <h3><span class="hn">8</span>Actualización de los datos</h3>
         <table class="ht"><thead><tr><th>Dato</th><th>Fuente</th><th>Se actualiza</th></tr></thead><tbody>
-          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>al entrar o recargar (directo) · cada 2 min (GitHub)</td></tr>
+          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>al entrar, recargar o pulsar «Actualizado» · y cada 2 min en GitHub</td></tr>
           <tr><td>NOTAM</td><td>FAA</td><td>cada 30 min</td></tr>
           <tr><td>Colores OTAN</td><td>AEMET · @meteolemobot</td><td>cada 30 min</td></tr>
           <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>cada hora</td></tr>
@@ -424,7 +428,7 @@ html{scroll-behavior:smooth}
         </tbody></table>
         <p class="note">Un aviso externo (cron-job.org) lanza la descarga cada 2 min. Si ese aviso falla, GitHub la hace por su cuenta aproximadamente cada hora. Fíjate en la antigüedad que aparece junto a cada METAR y cada mapa.</p>
         <ul class="hl">
-          <li><span class="livebadge ok"><i></i> Directo</span>: METAR y TAF pedidos a aviationweather.gov en el momento de abrir o recargar la página. <span class="livebadge ok"><i></i> En vivo</span>: datos de la última descarga de GitHub (un METAR nuevo aparece unos 3–5 min después de publicarse). En rojo, no se han podido cargar.</li>
+          <li><span class="livebadge ok"><i></i> Actualizado · 17:09Z</span>: hora de la última descarga de METAR y TAF. <b>Púlsalo</b> para volver a descargar todo al momento: METAR, TAF, NOTAM, satélite y mapas. En rojo, no se han podido cargar.</li>
           <li>Un METAR con más de 90 min aparece en <b style="color:var(--warn)">rojo · desactualizado</b>.</li>
           <li>Al <b>entrar, recargar o volver</b> a la página se carga siempre la última versión con los datos más recientes. Con la página abierta, comprueba si hay datos nuevos cada 5 min.</li>
         </ul>
@@ -703,41 +707,76 @@ function render(){
 $("cards").addEventListener("toggle",e=>{const d=e.target;if(d.classList&&d.classList.contains("nblock"))NOPEN[d.dataset.slot]=d.open;},true);
 $("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adsel");if(!sel)return;SLOTS[+sel.dataset.slot]=sel.value;ls.set("mp-ads",JSON.stringify(SLOTS));render();loadLive().then(d=>{if(d)render();});});
 
-/* ---------- carga de datos (archivos del repositorio, actualizados por GitHub Actions) ---------- */
-/* Intermediario de Cloudflare: METAR y TAF pedidos en el momento a aviationweather.gov */
+/* ---------- carga de METAR y TAF ----------
+   Orden: 1) AVWX desde el navegador (token cifrado con la clave de acceso)
+          2) intermediario de Cloudflare
+          3) archivos del repositorio que descarga GitHub cada pocos minutos.
+   Siempre se queda con el METAR y el TAF más recientes de cada aeródromo. */
 const LIVE_URL="https://metpanel.djgarcia463.workers.dev/";
-let liveAt=0;
+const AVWX_ENC=null; // {iv,ct}: token de AVWX cifrado con AES-GCM y la clave de acceso
+let AVWX_TOKEN=null,dataAt=0;
 function obsFromText(m,t){
   return parseObs(m.split("\n").map(l=>l.trim()&&!/^(METAR|SPECI)/.test(l)?"METAR "+l:l).join("\n")+"\n"+t.replace(/\r/g,"").split(/\n(?=TAF|[A-Z]{4} \d{6}Z)/).map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l).join("\n"));
 }
 const tafIssued=x=>x&&x.time?+dayTime(+x.time.slice(0,2),+x.time.slice(2,4),+x.time.slice(4,6),Date.now()):0;
+function mergeObs(L){
+  for(const id in L){
+    const cur=OBS[id]=OBS[id]||{},a=L[id];
+    if(a.metar&&(!cur.metar||+a.metar.at>=+cur.metar.at))cur.metar=a.metar;
+    if(a.taf&&(!cur.taf||tafIssued(a.taf)>=tafIssued(cur.taf)))cur.taf=a.taf;
+  }
+}
+const withTimeout=(ms,fn)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);return fn(c.signal).finally(()=>clearTimeout(t));};
+async function avwxToken(){
+  if(AVWX_TOKEN||!AVWX_ENC||!KEY)return AVWX_TOKEN;
+  try{AVWX_TOKEN=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(AVWX_ENC.iv)},KEY,b64(AVWX_ENC.ct)));}catch(e){}
+  return AVWX_TOKEN;
+}
+async function loadAvwx(){
+  const tok=await avwxToken();if(!tok)return false;
+  const ids=[...new Set(SLOTS)];
+  try{
+    const res=await withTimeout(8000,sig=>Promise.all(ids.flatMap(id=>["metar","taf"].map(k=>
+      fetch(`https://avwx.rest/api/${k}/${id}?token=${encodeURIComponent(tok)}`,{cache:"no-store",signal:sig}).then(r=>r.ok?r.json():null).catch(()=>null)))));
+    let m="",t="",n=0;
+    ids.forEach((id,i)=>{const a=res[2*i],b=res[2*i+1];if(a&&a.raw){m+=a.raw+"\n";n++;}if(b&&b.raw){t+=b.raw+"\n";n++;}});
+    if(!n)return false;
+    mergeObs(obsFromText(m,t));return true;
+  }catch(e){return false;}
+}
 async function loadLive(){
   if(!LIVE_URL)return false;
-  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),7000);
   try{
-    const j=await fetch(LIVE_URL+"?ids="+[...new Set(SLOTS)].join(",")+"&_="+Date.now(),{cache:"no-store",signal:ctl.signal}).then(r=>{if(!r.ok)throw r.status;return r.json()});
-    const L=obsFromText(j.metar||"",j.taf||"");
-    for(const id in L){
-      const cur=OBS[id]=OBS[id]||{},a=L[id];
-      if(a.metar&&(!cur.metar||+a.metar.at>=+cur.metar.at))cur.metar=a.metar;
-      if(a.taf&&(!cur.taf||tafIssued(a.taf)>=tafIssued(cur.taf)))cur.taf=a.taf;
-    }
-    liveAt=Date.now();return true;
-  }catch(e){return false;}finally{clearTimeout(to);}
+    const j=await withTimeout(7000,sig=>fetch(LIVE_URL+"?ids="+[...new Set(SLOTS)].join(",")+"&_="+Date.now(),{cache:"no-store",signal:sig}).then(r=>{if(!r.ok)throw r.status;return r.json()}));
+    mergeObs(obsFromText(j.metar||"",j.taf||""));return true;
+  }catch(e){return false;}
+}
+function paintBadge(state){
+  const b=$("liveBadge"),z=t=>new Date(t).toISOString().slice(11,16)+"Z";
+  if(state==="busy"){b.classList.add("busy");b.lastChild.textContent=" Actualizando…";return;}
+  b.classList.remove("busy");
+  if(state==="ok"){b.classList.remove("err");b.classList.add("ok");b.lastChild.textContent=" Actualizado · "+z(dataAt);}
+  else{b.classList.remove("ok");b.classList.add("err");b.lastChild.textContent=" Sin datos · pulsa para reintentar";}
 }
 async function load(){
-  const get=u=>fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()});
+  const get=u=>fetch(u+"?_="+Date.now(),{cache:"no-store"});
   const res=await Promise.allSettled([get("data/metar.txt"),get("data/taf.txt"),get("data/notam.json")]);
-  const ok=res.filter(r=>r.status==="fulfilled").length;
-  if(res[0].status==="fulfilled"||res[1].status==="fulfilled")OBS=obsFromText(res[0].value||"",res[1].value||"");
-  notamOk=res[2].status==="fulfilled";if(notamOk)NOT=parseNotamData(res[2].value);
-  const direct=await loadLive();
+  const txt=async r=>r.status==="fulfilled"&&r.value.ok?r.value.text():null;
+  const [m,t,n]=await Promise.all(res.map(txt));
+  let ok=m!=null||t!=null;
+  if(ok){OBS=obsFromText(m||"",t||"");const lm=res[0].status==="fulfilled"&&res[0].value.headers.get("last-modified");dataAt=lm?Date.parse(lm):Date.now();}
+  notamOk=n!=null;if(notamOk)NOT=parseNotamData(n);
+  const [av,lv]=await Promise.all([loadAvwx(),loadLive()]);
+  if(av||lv){ok=true;dataAt=Date.now();}
   loaded=true;
-  const b=$("liveBadge"),hhmm=new Date().toISOString().slice(11,16)+"Z";
-  if(direct){b.className="livebadge ok";b.lastChild.textContent=" Directo · "+hhmm;b.title="METAR y TAF pedidos ahora a aviationweather.gov";$("offline").hidden=true;}
-  else if(ok){b.className="livebadge ok";b.lastChild.textContent=" En vivo · "+hhmm;b.title="Datos descargados por GitHub (cada 10 min)";$("offline").hidden=true;}
-  else{b.className="livebadge err";b.lastChild.textContent=" Sin datos en vivo";b.title="";$("offline").hidden=false;}
+  $("offline").hidden=ok;
+  paintBadge(ok?"ok":"err");
   render();
+}
+let refreshing=false;
+async function manualRefresh(){
+  if(refreshing)return;refreshing=true;paintBadge("busy");
+  try{await Promise.all([load(),loadSig(),loadCol(),Promise.resolve(refreshSat())]);}finally{refreshing=false;}
 }
 
 /* ---------- mapa significativo (imágenes del bot, guardadas por GitHub Actions) ---------- */
@@ -835,7 +874,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041710";
+const BUILD="202611041715";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
@@ -844,6 +883,7 @@ async function checkVersion(){
   }catch(e){}
 }
 function refreshAll(){load();refreshSat();loadSig();loadCol();}
+$("liveBadge").addEventListener("click",manualRefresh);
 let hiddenAt=0;
 document.addEventListener("visibilitychange",()=>{if(document.hidden)hiddenAt=Date.now();else if(Date.now()-hiddenAt>60000){checkVersion();refreshAll();}});
 window.addEventListener("pageshow",e=>{if(e.persisted){checkVersion();refreshAll();}});
@@ -873,6 +913,7 @@ async function enter(k,remember){
   KEY=k;setLocked(false);
   if(remember){try{const raw=await crypto.subtle.exportKey("raw",k);ls.set("mp-key",btoa(String.fromCharCode(...new Uint8Array(raw))));}catch(e){}}
   unlockSectors();
+  if(AVWX_ENC)load();
 }
 $("gateForm").addEventListener("submit",async e=>{
   e.preventDefault();$("gErr").hidden=true;$("gBtn").disabled=true;$("gBtn").textContent="Comprobando…";
