@@ -98,7 +98,6 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .tl{display:block;padding:3px 8px;border-left:6px solid var(--off);border-radius:2px}
 .tl.dim{opacity:.45}
 .tl.probimc{box-shadow:inset 0 0 0 2px var(--red);border-radius:3px}
-.tl.dim.probimc{opacity:.8}
 .tl.hit{font-weight:800;background:var(--hl)}
 .bar-BLU{border-left-color:var(--blu)!important}.bar-WHT{border-left-color:var(--wht)!important;box-shadow:inset 1px 0 0 var(--line)}.bar-GRN{border-left-color:var(--grn)!important}.bar-YLO{border-left-color:var(--ylo)!important}.bar-AMB{border-left-color:var(--amb)!important}.bar-RED{border-left-color:var(--red)!important}
 .age{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
@@ -336,11 +335,11 @@ html{scroll-behavior:smooth}
 
       <section class="hs">
         <h3><span class="hn">4</span>TAF resaltado</h3>
-        <pre class="raw taf-raw" aria-hidden="true"><span class="tl bar-BLU hit">TAF LEMO 031400Z 0315/0415 23010KT CAVOK</span><span class="tl bar-WHT hit">TEMPO 0408/0412 6000 SHRA BKN025</span><span class="tl bar-YLO dim probimc">PROB40 0414/0418 3000 RA BKN008</span><span class="tl bar-GRN dim">BECMG 0418/0420 4000 BR BKN012</span></pre>
+        <pre class="raw taf-raw" aria-hidden="true"><span class="tl bar-BLU hit">TAF LEMO 031400Z 0315/0415 23010KT CAVOK</span><span class="tl bar-WHT hit">TEMPO 0408/0412 6000 SHRA BKN025</span><span class="tl bar-YLO hit probimc">PROB40 0410/0414 3000 RA BKN008</span><span class="tl bar-GRN dim">BECMG 0418/0420 4000 BR BKN012</span></pre>
         <ul class="hl">
           <li>Cada tramo va en su línea, con su <b>color OTAN</b> en el borde.</li>
           <li><b>Negrita y fondo amarillo</b>: tramos que coinciden con tu vuelo. Atenuados: fuera de tu ventana.</li>
-          <li><b style="color:var(--red)">Borde rojo</b>: tramo <b>PROB30</b> o <b>PROB40</b> (también PROB TEMPO) con condiciones <b>IMC</b>, esté o no dentro de tu vuelo.</li>
+          <li><b style="color:var(--red)">Borde rojo</b>, solo en tramos <b>IMC dentro de tu ventana de vuelo</b> (también PROB TEMPO):<br>· <b>PROB40</b>: se marca en cada aeródromo por separado.<br>· <b>PROB30</b>: se marca solo si los <b>tres aeródromos</b> en pantalla tienen un PROB30 IMC en tu ventana.</li>
           <li>Si tu vuelo queda fuera del TAF, el cuadro pone <b>TAF ≈</b> y usa el tramo más cercano.</li>
         </ul>
       </section>
@@ -618,6 +617,9 @@ let OBS={},NOT={},loaded=false,notamOk=false;const NOPEN={};
 function render(){
   const cards=$("cards"),sum=$("summary");if(!win.s)return;cards.innerHTML="";sum.innerHTML="";
   const now=Date.now();
+  // PROB IMC dentro de la ventana: PROB40 se marca siempre; PROB30 solo si los 3 aeródromos lo tienen
+  const probImc=(id,n)=>{const t=(OBS[id]||{}).taf;return !!t&&t.groups.some(g=>new RegExp("^PROB"+n+"\\b").test(g.line)&&VI(g.cc)==="IMC"&&overlap(win.s,win.e,+g.from,+g.to));};
+  const allP30=SLOTS.every(id=>probImc(id,30));
   SLOTS.forEach((id,slot)=>{
     const d=OBS[id]||{};const m=d.metar,t=d.taf;
     let closed=false,late=false,ops="";
@@ -631,7 +633,7 @@ function render(){
     let age="",stale=false;
     if(m&&m.at){const min=Math.round((now-m.at)/60000);stale=min>90;age="hace "+(min<120?min+" min":Math.round(min/60)+" h");}
     let worst=null,tafNear=false;
-    const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(hit&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;const pi=/^PROB(30|40)\b/.test(g.line)&&VI(g.cc)==="IMC";return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}${pi?" probimc":""}"${pi?' title="PROB con condiciones IMC"':""}>${esc(g.line)}</span>`;}).join(""):"";
+    const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(hit&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;const imc=hit&&VI(g.cc)==="IMC",p40=imc&&/^PROB40\b/.test(g.line),p30=imc&&allP30&&/^PROB30\b/.test(g.line),pi=p40||p30;return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}${pi?" probimc":""}"${pi?` title="${p40?"PROB40 con IMC en tu ventana de vuelo":"PROB30 con IMC en tu ventana en los 3 aeródromos"}"`:""}>${esc(g.line)}</span>`;}).join(""):"";
     if(t&&worst===null&&t.groups.length){ // la ventana cae fuera del TAF: usar el tramo o tramos más cercanos
       const dist=g=>Math.max(0,+g.from-win.e,win.s-+g.to),dmin=Math.min(...t.groups.map(dist));
       for(const g of t.groups)if(dist(g)===dmin&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;
@@ -776,7 +778,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041021";
+const BUILD="202611041024";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
