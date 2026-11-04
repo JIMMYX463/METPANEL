@@ -416,7 +416,7 @@ html{scroll-behavior:smooth}
       <section class="hs">
         <h3><span class="hn">8</span>Actualización de los datos</h3>
         <table class="ht"><thead><tr><th>Dato</th><th>Fuente</th><th>Se actualiza</th></tr></thead><tbody>
-          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>cada 10 min</td></tr>
+          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>al entrar o recargar (directo) · cada 10 min (GitHub)</td></tr>
           <tr><td>NOTAM</td><td>FAA</td><td>cada 30 min</td></tr>
           <tr><td>Colores OTAN</td><td>AEMET · @meteolemobot</td><td>cada 30 min</td></tr>
           <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>cada hora</td></tr>
@@ -424,7 +424,7 @@ html{scroll-behavior:smooth}
         </tbody></table>
         <p class="note">Un aviso externo (cron-job.org) lanza la descarga cada 10 min. Si ese aviso falla, GitHub la hace por su cuenta aproximadamente cada hora. Fíjate en la antigüedad que aparece junto a cada METAR y cada mapa.</p>
         <ul class="hl">
-          <li><span class="livebadge ok"><i></i> En vivo</span> indica que los datos llegan bien. En rojo, no se han podido cargar.</li>
+          <li><span class="livebadge ok"><i></i> Directo</span>: METAR y TAF pedidos a aviationweather.gov en el momento de abrir o recargar la página. <span class="livebadge ok"><i></i> En vivo</span>: datos de la última descarga de GitHub (máx. ~10 min). En rojo, no se han podido cargar.</li>
           <li>Un METAR con más de 90 min aparece en <b style="color:var(--warn)">rojo · desactualizado</b>.</li>
           <li>Al <b>entrar, recargar o volver</b> a la página se carga siempre la última versión con los datos más recientes. Con la página abierta, comprueba si hay datos nuevos cada 5 min.</li>
         </ul>
@@ -701,22 +701,42 @@ function render(){
   placeMarks();
 }
 $("cards").addEventListener("toggle",e=>{const d=e.target;if(d.classList&&d.classList.contains("nblock"))NOPEN[d.dataset.slot]=d.open;},true);
-$("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adsel");if(!sel)return;SLOTS[+sel.dataset.slot]=sel.value;ls.set("mp-ads",JSON.stringify(SLOTS));render();});
+$("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adsel");if(!sel)return;SLOTS[+sel.dataset.slot]=sel.value;ls.set("mp-ads",JSON.stringify(SLOTS));render();loadLive().then(d=>{if(d)render();});});
 
 /* ---------- carga de datos (archivos del repositorio, actualizados por GitHub Actions) ---------- */
+/* Intermediario de Cloudflare: METAR y TAF pedidos en el momento a aviationweather.gov */
+const LIVE_URL="";
+let liveAt=0;
+function obsFromText(m,t){
+  return parseObs(m.split("\n").map(l=>l.trim()&&!/^(METAR|SPECI)/.test(l)?"METAR "+l:l).join("\n")+"\n"+t.replace(/\r/g,"").split(/\n(?=TAF|[A-Z]{4} \d{6}Z)/).map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l).join("\n"));
+}
+const tafIssued=x=>x&&x.time?+dayTime(+x.time.slice(0,2),+x.time.slice(2,4),+x.time.slice(4,6),Date.now()):0;
+async function loadLive(){
+  if(!LIVE_URL)return false;
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),7000);
+  try{
+    const j=await fetch(LIVE_URL+"?ids="+[...new Set(SLOTS)].join(",")+"&_="+Date.now(),{cache:"no-store",signal:ctl.signal}).then(r=>{if(!r.ok)throw r.status;return r.json()});
+    const L=obsFromText(j.metar||"",j.taf||"");
+    for(const id in L){
+      const cur=OBS[id]=OBS[id]||{},a=L[id];
+      if(a.metar&&(!cur.metar||+a.metar.at>=+cur.metar.at))cur.metar=a.metar;
+      if(a.taf&&(!cur.taf||tafIssued(a.taf)>=tafIssued(cur.taf)))cur.taf=a.taf;
+    }
+    liveAt=Date.now();return true;
+  }catch(e){return false;}finally{clearTimeout(to);}
+}
 async function load(){
   const get=u=>fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw r.status;return r.text()});
   const res=await Promise.allSettled([get("data/metar.txt"),get("data/taf.txt"),get("data/notam.json")]);
   const ok=res.filter(r=>r.status==="fulfilled").length;
-  if(res[0].status==="fulfilled"||res[1].status==="fulfilled"){
-    const m=res[0].value||"",t=res[1].value||"";
-    OBS=parseObs(m.split("\n").map(l=>l.trim()&&!/^(METAR|SPECI)/.test(l)?"METAR "+l:l).join("\n")+"\n"+t.replace(/\r/g,"").split(/\n(?=TAF|[A-Z]{4} \d{6}Z)/).map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l).join("\n"));
-  }
+  if(res[0].status==="fulfilled"||res[1].status==="fulfilled")OBS=obsFromText(res[0].value||"",res[1].value||"");
   notamOk=res[2].status==="fulfilled";if(notamOk)NOT=parseNotamData(res[2].value);
+  const direct=await loadLive();
   loaded=true;
-  const b=$("liveBadge");
-  if(ok){b.className="livebadge ok";b.lastChild.textContent=" En vivo · "+new Date().toISOString().slice(11,16)+"Z";$("offline").hidden=true;}
-  else{b.className="livebadge err";b.lastChild.textContent=" Sin datos en vivo";$("offline").hidden=false;}
+  const b=$("liveBadge"),hhmm=new Date().toISOString().slice(11,16)+"Z";
+  if(direct){b.className="livebadge ok";b.lastChild.textContent=" Directo · "+hhmm;b.title="METAR y TAF pedidos ahora a aviationweather.gov";$("offline").hidden=true;}
+  else if(ok){b.className="livebadge ok";b.lastChild.textContent=" En vivo · "+hhmm;b.title="Datos descargados por GitHub (cada 10 min)";$("offline").hidden=true;}
+  else{b.className="livebadge err";b.lastChild.textContent=" Sin datos en vivo";b.title="";$("offline").hidden=false;}
   render();
 }
 
@@ -815,7 +835,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041224";
+const BUILD="202611041242";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
