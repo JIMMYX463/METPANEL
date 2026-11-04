@@ -705,7 +705,7 @@ $("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adse
 
 /* ---------- carga de datos (archivos del repositorio, actualizados por GitHub Actions) ---------- */
 /* Intermediario de Cloudflare: METAR y TAF pedidos en el momento a aviationweather.gov */
-const LIVE_URL="";
+const LIVE_URL="https://metpanel.djgarcia463.workers.dev/";
 let liveAt=0;
 function obsFromText(m,t){
   return parseObs(m.split("\n").map(l=>l.trim()&&!/^(METAR|SPECI)/.test(l)?"METAR "+l:l).join("\n")+"\n"+t.replace(/\r/g,"").split(/\n(?=TAF|[A-Z]{4} \d{6}Z)/).map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l).join("\n"));
@@ -835,7 +835,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041242";
+const BUILD="202611041258";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
