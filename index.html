@@ -390,7 +390,7 @@ html{scroll-behavior:smooth}
 
       <section class="hs">
         <h3><span class="hn">3</span>Aeródromos y colores OTAN</h3>
-        <p class="hp">Pulsa el nombre de una tarjeta para elegir otro aeródromo de España. Cada tarjeta lleva dos cuadros: <b>METAR</b> (ahora) y <b>TAF</b> (el peor tramo dentro de tu vuelo). El fondo es el color OTAN y el texto dice <b>VMC</b> si es azul o blanco, o <b>IMC</b> con cualquier otro color. Se toma el peor de visibilidad y techo (BKN, OVC o VV).</p>
+        <p class="hp">Pulsa el nombre de una tarjeta para elegir otro aeródromo de España. Cada tarjeta lleva dos cuadros: <b>METAR</b> (ahora) y <b>TAF</b> (el peor tramo entre <b>ahora y +3 h</b>, igual que el mapa de colores de AEMET). El fondo es el color OTAN y el texto dice <b>VMC</b> si es azul o blanco, o <b>IMC</b> con cualquier otro color. Se toma el peor de visibilidad y techo (BKN, OVC o VV).</p>
         <div class="hcol" id="helpLegend"></div>
       </section>
 
@@ -401,7 +401,7 @@ html{scroll-behavior:smooth}
           <li>Cada tramo va en su línea, con su <b>color OTAN</b> en el borde.</li>
           <li><b>Negrita y fondo amarillo</b>: tramos que coinciden con tu vuelo. Atenuados: fuera de tu ventana.</li>
           <li><b style="color:var(--red)">Borde rojo</b>, solo en tramos <b>IMC dentro de tu ventana de vuelo</b> (también PROB TEMPO):<br>· <b>PROB40</b>: se marca en cada aeródromo por separado.<br>· <b>PROB30</b>: se marca solo si los <b>tres aeródromos</b> en pantalla tienen un PROB30 IMC en tu ventana.</li>
-          <li>Si tu vuelo queda fuera del TAF, el cuadro pone <b>TAF ≈</b> y usa el tramo más cercano.</li>
+          <li>El <b>cuadro TAF</b> de cada tarjeta toma el peor tramo entre ahora y +3 h. Si el TAF aún no cubre ese periodo, pone <b>TAF ≈</b> y usa el tramo más cercano.</li>
         </ul>
       </section>
 
@@ -694,19 +694,20 @@ function render(){
     let age="",stale=false;
     if(m&&m.at){const min=Math.round((now-m.at)/60000);stale=min>90;age="hace "+(min<120?min+" min":Math.round(min/60)+" h");}
     let worst=null,tafNear=false;
-    const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(hit&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;const imc=hit&&VI(g.cc)==="IMC",p40=imc&&/^PROB40\b/.test(g.line),p30=imc&&allP30&&/^PROB30\b/.test(g.line),pi=p40||p30;return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}${pi?" probimc":""}"${pi?` title="${p40?"PROB40 con IMC en tu ventana de vuelo":"PROB30 con IMC en tu ventana en los 3 aeródromos"}"`:""}>${esc(g.line)}</span>`;}).join(""):"";
-    if(t&&worst===null&&t.groups.length){ // la ventana cae fuera del TAF: usar el tramo o tramos más cercanos
-      const dist=g=>Math.max(0,+g.from-win.e,win.s-+g.to),dmin=Math.min(...t.groups.map(dist));
+    const cS=now,cE=now+3*H; // color del cuadro TAF: peor tramo entre ahora y +3 h (como el mapa de colores)
+    const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(overlap(cS,cE,+g.from,+g.to)&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;const imc=hit&&VI(g.cc)==="IMC",p40=imc&&/^PROB40\b/.test(g.line),p30=imc&&allP30&&/^PROB30\b/.test(g.line),pi=p40||p30;return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}${pi?" probimc":""}"${pi?` title="${p40?"PROB40 con IMC en tu ventana de vuelo":"PROB30 con IMC en tu ventana en los 3 aeródromos"}"`:""}>${esc(g.line)}</span>`;}).join(""):"";
+    if(t&&worst===null&&t.groups.length){ // el TAF no cubre las próximas 3 h: usar el tramo o tramos más cercanos
+      const dist=g=>Math.max(0,+g.from-cE,cS-+g.to),dmin=Math.min(...t.groups.map(dist));
       for(const g of t.groups)if(dist(g)===dmin&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;
       tafNear=true;
     }
     const isHit=n=>!!(n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to));
     const nlist=(NOT[id]||[]).filter(n=>!n.area&&(!n.to||n.to==="PERM"||+n.to>now)).sort((a,b)=>(isHit(b)-isHit(a))||((b.issued||0)-(a.issued||0)));
     const nNew=nlist.filter(n=>n.issued&&now-n.issued<=24*H).length,nHit=nlist.filter(isHit).length;
-    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR${m?" · "+m.cc:""}">${m?VI(m.cc):"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF en ventana${worst?" · "+worst:""}">${worst?VI(worst):"—"}</span></a>`);
+    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR${m?" · "+m.cc:""}">${m?VI(m.cc):"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF ahora → +3 h${worst?" · "+worst:""}">${worst?VI(worst):"—"}</span></a>`);
     const el=document.createElement("article");el.className="ad"+(closed?" closed":late?" late":"");el.id="ad-"+slot;
     el.innerHTML=`<div class="ad-head"><div class="ad-id"><label class="sr" for="adsel${slot}">Aeródromo ${slot+1}</label><select class="adsel" id="adsel${slot}" data-slot="${slot}" title="Cambiar aeródromo">${adOptions(id)}</select></div>
-      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc:""}"><small>METAR</small>${m?VI(m.cc):"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst+(tafNear?" · el TAF no cubre tu ventana: tramo más cercano":""):""}"><small>TAF${tafNear?" ≈":""}</small>${worst?VI(worst):"—"}</div></div></div>${ops}
+      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc:""}"><small>METAR</small>${m?VI(m.cc):"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst+(tafNear?" · el TAF no cubre las próximas 3 h: tramo más cercano":" · peor tramo entre ahora y +3 h"):""}"><small>TAF${tafNear?" ≈":""}</small>${worst?VI(worst):"—"}</div></div></div>${ops}
       <div class="ad-body">
         <div class="sec"><div class="sec-h"><span class="label">METAR</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
           ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
@@ -940,7 +941,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041818";
+const BUILD="202611041911";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
