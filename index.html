@@ -166,7 +166,9 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 .links a span{color:var(--muted);font-size:.78rem}
 .links a:hover{border-color:var(--accent)}
 .note{font-size:.8rem;color:var(--muted);margin:0}
-.brand{all:unset;cursor:pointer;display:block;border-radius:4px}
+.brand{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;border-radius:4px}
+.brand .crest{height:46px;width:auto;flex:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.brand .bt{display:block;letter-spacing:.02em}
 .brand:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .brand .qm{display:inline-grid;place-items:center;width:1.15em;height:1.15em;margin-left:.35em;border-radius:50%;background:var(--accent);color:var(--panel);font:800 .62em var(--body);vertical-align:.25em}
 .brand:hover .qm{filter:brightness(1.15)}
@@ -218,6 +220,7 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
   .ad-body .sec:nth-child(1){border-right:0}
   .clock span{display:none}
   h1{font-size:1.25rem}
+  .brand .crest{height:38px}
   .summary{order:3;width:100%}
   .sum{flex:1;justify-content:center}
   .cc{min-width:60px;font-size:1.2rem}
@@ -234,7 +237,7 @@ html{scroll-behavior:smooth}
 
 <div class="top">
   <div class="in top-in">
-    <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><small>Meteorología aeronáutica</small>Panel meteo<span class="qm" aria-hidden="true">?</span></button></h1>
+    <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><img class="crest" src="escudo.png" alt="Escudo del 232 Escuadrón «Patas Negras», Ala 23"><span class="bt"><small>Meteorología aeronáutica</small>PANEL METEO<span class="qm" aria-hidden="true">?</span></span></button></h1>
     <nav class="summary" id="summary" aria-label="Resumen por aeródromo"></nav>
     <span class="livebadge" id="liveBadge"><i></i> Conectando…</span>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
@@ -290,7 +293,7 @@ html{scroll-behavior:smooth}
         <svg class="hsvg" viewBox="-30 0 630 300" role="img" aria-label="Esquema de la página">
           <rect x="1" y="1" width="598" height="298" rx="8" class="s-bg"/>
           <rect x="12" y="12" width="576" height="30" rx="4" class="s-bar"/>
-          <text x="24" y="32" class="s-t">Panel meteo</text>
+          <text x="24" y="32" class="s-t">PANEL METEO</text>
           <rect x="190" y="19" width="56" height="16" rx="3" class="s-chip"/><rect x="252" y="19" width="56" height="16" rx="3" class="s-chip"/><rect x="314" y="19" width="56" height="16" rx="3" class="s-chip"/>
           <text x="560" y="32" class="s-t" text-anchor="end">20:43 Z</text>
           <rect x="12" y="48" width="576" height="24" rx="4" class="s-fl"/>
@@ -325,7 +328,7 @@ html{scroll-behavior:smooth}
 
       <section class="hs">
         <h3><span class="hn">3</span>Aeródromos y colores OTAN</h3>
-        <p class="hp">Pulsa el nombre de una tarjeta para elegir otro aeródromo de España. Cada tarjeta lleva dos colores: <b>METAR</b> (ahora) y <b>TAF</b> (el peor tramo dentro de tu vuelo). Se toma el peor de visibilidad y techo (BKN, OVC o VV).</p>
+        <p class="hp">Pulsa el nombre de una tarjeta para elegir otro aeródromo de España. Cada tarjeta lleva dos cuadros: <b>METAR</b> (ahora) y <b>TAF</b> (el peor tramo dentro de tu vuelo). El fondo es el color OTAN y el texto dice <b>VMC</b> si es azul o blanco, o <b>IMC</b> con cualquier otro color. Se toma el peor de visibilidad y techo (BKN, OVC o VV).</p>
         <div class="hcol" id="helpLegend"></div>
       </section>
 
@@ -406,6 +409,7 @@ const DEFAULT_SLOTS=["LEBZ","LPBJ","LEMO"];
 let SLOTS=(()=>{try{const v=JSON.parse(ls.get("mp-ads")||"null");if(Array.isArray(v)&&v.length===3&&v.every(x=>AIRPORTS[x]))return v;}catch(e){}return DEFAULT_SLOTS.slice();})();
 const adOptions=sel=>GROUPS.map(([g,o])=>`<optgroup label="${g}">${Object.entries(o).map(([k,v])=>`<option value="${k}"${k===sel?" selected":""}>${k} · ${esc(v)}</option>`).join("")}</optgroup>`).join("");
 const STATES=[["BLU",8000,2500],["WHT",5000,1500],["GRN",3700,700],["YLO",1600,300],["AMB",800,200],["RED",0,0]];
+const VI=cc=>cc==="BLU"||cc==="WHT"?"VMC":"IMC";
 const RANK=Object.fromEntries(STATES.map((s,i)=>[s[0],i]));
 const p2=x=>String(x).padStart(2,"0");
 const fmtZ=d=>d==="PERM"?"PERM":d?p2(d.getUTCDate())+"/"+p2(d.getUTCMonth()+1)+" "+p2(d.getUTCHours())+p2(d.getUTCMinutes())+"Z":"—";
@@ -627,10 +631,10 @@ function render(){
     const isHit=n=>!!(n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to));
     const nlist=(NOT[id]||[]).filter(n=>!n.area&&(!n.to||n.to==="PERM"||+n.to>now)).sort((a,b)=>(isHit(b)-isHit(a))||((b.issued||0)-(a.issued||0)));
     const nNew=nlist.filter(n=>n.issued&&now-n.issued<=24*H).length,nHit=nlist.filter(isHit).length;
-    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR">${m?m.cc:"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF en ventana">${worst||"—"}</span></a>`);
+    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR${m?" · "+m.cc:""}">${m?VI(m.cc):"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF en ventana${worst?" · "+worst:""}">${worst?VI(worst):"—"}</span></a>`);
     const el=document.createElement("article");el.className="ad"+(closed?" closed":late?" late":"");el.id="ad-"+slot;
     el.innerHTML=`<div class="ad-head"><div class="ad-id"><label class="sr" for="adsel${slot}">Aeródromo ${slot+1}</label><select class="adsel" id="adsel${slot}" data-slot="${slot}" title="Cambiar aeródromo">${adOptions(id)}</select></div>
-      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}"><small>METAR</small>${m?m.cc:"—"}</div><div class="cc ${worst?"c-"+worst:""}"><small>TAF</small>${worst||"—"}</div></div></div>${ops}
+      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc:""}"><small>METAR</small>${m?VI(m.cc):"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst:""}"><small>TAF</small>${worst?VI(worst):"—"}</div></div></div>${ops}
       <div class="ad-body">
         <div class="sec"><div class="sec-h"><span class="label">METAR</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
           ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
@@ -753,7 +757,7 @@ function refreshSat(){
 $("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";$("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo";refreshSat();});
 
 /* ---------- instrucciones ---------- */
-$("helpLegend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${n}</span><span>${n==="RED"?"&lt;800 m · &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
+$("helpLegend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${VI(n)}</span><b>${n}</b><span>${n==="RED"?"&lt;800 m · &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
 let helpReturn=null;
 function openHelp(){helpReturn=document.activeElement;$("help").hidden=false;document.body.style.overflow="hidden";$("helpClose").focus();}
 function closeHelp(){$("help").hidden=true;document.body.style.overflow="";if(helpReturn)helpReturn.focus();}
@@ -763,7 +767,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611032119";
+const BUILD="202611041012";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
