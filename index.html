@@ -532,14 +532,19 @@ $("fNow").addEventListener("click",()=>{win.s=Math.ceil(Date.now()/M5)*M5;win.e=
 
 /* ---------- METAR / TAF ---------- */
 function parseWx(tok){
-  let vis=null,ceil=null,cavok=false;
+  // Visibilidad: la predominante y, si se dan, las mínimas por sectores (p. ej. 3500S); cuenta la menor.
+  // Techo: la base más baja de BKN, OVC o VV (VV/// = cielo oscurecido, techo 0).
+  let vis=null,dirMin=null,ceil=null,cavok=false;
   for(const t of tok){
     if(t==="CAVOK"){cavok=true;vis=10000;}
-    else if(/^\d{4}$/.test(t)&&vis===null){vis=t==="9999"?10000:+t;}
+    else if(/^\d{4}(NDV)?$/.test(t)&&vis===null){vis=t.startsWith("9999")?10000:+t.slice(0,4);}
+    else if(/^\d{4}(N|NE|E|SE|S|SW|W|NW)$/.test(t)){const v=+t.slice(0,4);if(dirMin===null||v<dirMin)dirMin=v;}
     else if(/^(BKN|OVC)\d{3}/.test(t)){const h=+t.slice(3,6)*100;if(ceil===null||h<ceil)ceil=h;}
     else if(/^VV\d{3}/.test(t)){const h=+t.slice(2,5)*100;if(ceil===null||h<ceil)ceil=h;}
+    else if(/^VV\/\/\//.test(t)){ceil=0;}
     else if(/^(NSC|SKC|CLR|NCD)$/.test(t)){ceil=ceil??99999;}
   }
+  if(dirMin!==null)vis=vis===null?dirMin:Math.min(vis,dirMin);
   if(ceil===null&&(cavok||tok.some(t=>/^(FEW|SCT)\d{3}/.test(t))))ceil=99999;
   return {vis,ceil};
 }
@@ -941,7 +946,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611041911";
+const BUILD="202611051252";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
