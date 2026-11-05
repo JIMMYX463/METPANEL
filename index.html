@@ -390,8 +390,17 @@ html{scroll-behavior:smooth}
 
       <section class="hs">
         <h3><span class="hn">3</span>Aeródromos y colores OTAN</h3>
-        <p class="hp">Pulsa el nombre de una tarjeta para elegir otro aeródromo de España. Cada tarjeta lleva dos cuadros: <b>METAR</b> (ahora) y <b>TAF</b> (el peor tramo entre <b>ahora y +3 h</b>, igual que el mapa de colores de AEMET). El fondo es el color OTAN y el texto dice <b>VMC</b> si es azul o blanco, o <b>IMC</b> con cualquier otro color. Se toma el peor de visibilidad y techo (BKN, OVC o VV).</p>
+        <p class="hp">Pulsa el nombre de una tarjeta para elegir otro aeródromo de España. Cada tarjeta lleva dos cuadros: <b>METAR</b> (ahora) y <b>TAF</b> (el peor tramo entre <b>ahora y +3 h</b>, igual que el mapa de colores de AEMET). El <b>fondo</b> es el color OTAN y el <b>texto</b> la categoría de vuelo. Para la visibilidad cuenta la menor entre la predominante y las mínimas por sectores (p. ej. <code>3500S</code>); para el techo, la base más baja de BKN, OVC o VV.</p>
+        <div class="label">Color OTAN (fondo)</div>
         <div class="hcol" id="helpLegend"></div>
+        <div class="label">Categoría de vuelo (texto)</div>
+        <table class="ht"><thead><tr><th>Categoría</th><th>Visibilidad</th><th>Techo</th></tr></thead><tbody>
+          <tr><td><b>VFR</b></td><td>&gt; 8 km</td><td>&gt; 3000 ft</td></tr>
+          <tr><td><b>MVFR</b></td><td>5–8 km</td><td>1000–3000 ft</td></tr>
+          <tr><td><b>IFR</b></td><td>1,6–5 km</td><td>500–1000 ft</td></tr>
+          <tr><td><b>LIFR</b></td><td>&lt; 1,6 km</td><td>&lt; 500 ft</td></tr>
+        </tbody></table>
+        <p class="note">Manda el peor de los dos: con 3500 m de visibilidad y sin techo, el fondo es amarillo (YLO) y el texto IFR.</p>
       </section>
 
       <section class="hs">
@@ -474,6 +483,9 @@ let SLOTS=(()=>{try{const v=JSON.parse(ls.get("mp-ads")||"null");if(Array.isArra
 const adOptions=sel=>GROUPS.map(([g,o])=>`<optgroup label="${g}">${Object.entries(o).map(([k,v])=>`<option value="${k}"${k===sel?" selected":""}>${k} · ${esc(v)}</option>`).join("")}</optgroup>`).join("");
 const STATES=[["BLU",8000,2500],["WHT",5000,1500],["GRN",3700,700],["YLO",1600,300],["AMB",800,200],["RED",0,0]];
 const VI=cc=>cc==="BLU"||cc==="WHT"?"VMC":"IMC";
+// Categoría de vuelo (texto de los cuadros): VFR > 8 km y > 3000 ft · MVFR 5–8 km o 1000–3000 ft · IFR 1,6–5 km o 500–1000 ft · LIFR < 1,6 km o < 500 ft
+const CATS=["VFR","MVFR","IFR","LIFR"];
+function fcat(vis,ceil){const v=vis??10000,c=ceil??99999;if(v<1600||c<500)return "LIFR";if(v<5000||c<1000)return "IFR";if(v<=8000||c<=3000)return "MVFR";return "VFR";}
 const RANK=Object.fromEntries(STATES.map((s,i)=>[s[0],i]));
 const p2=x=>String(x).padStart(2,"0");
 const fmtZ=d=>d==="PERM"?"PERM":d?p2(d.getUTCDate())+"/"+p2(d.getUTCMonth()+1)+" "+p2(d.getUTCHours())+p2(d.getUTCMinutes())+"Z":"—";
@@ -558,7 +570,7 @@ function dayTime(dd,hh,mm,ref){ // día del mes + hora -> Date UTC cercana a ref
 const per=(s,ref)=>{const m=s.match(/^(\d{2})(\d{2})\/(\d{2})(\d{2})$/);return m?[dayTime(+m[1],+m[2],0,ref),dayTime(+m[3],+m[4],0,ref)]:null;};
 function parseMetar(s){
   const tok=s.split(" ");const r={raw:s,time:tok.find(x=>/^\d{6}Z$/.test(x))};
-  Object.assign(r,parseWx(tok));r.cc=colour(r.vis,r.ceil);
+  Object.assign(r,parseWx(tok));r.cc=colour(r.vis,r.ceil);r.cat=fcat(r.vis,r.ceil);
   if(r.time)r.at=dayTime(+r.time.slice(0,2),+r.time.slice(2,4),+r.time.slice(4,6),Date.now());
   return r;
 }
@@ -584,7 +596,7 @@ function parseTaf(raw){
   const out=gs.map((g,i)=>{
     const p=parseWx(g.tok);const vis=p.vis??prev.vis,ceil=p.ceil??prev.ceil;
     if(i===0||/^(BECMG|FM)/.test(g.kind))prev={vis,ceil};
-    return {line:(i===0?pre:"")+g.tok.join(" "),cc:colour(vis,ceil),from:g.from,to:g.to};
+    return {line:(i===0?pre:"")+g.tok.join(" "),cc:colour(vis,ceil),cat:fcat(vis,ceil),from:g.from,to:g.to};
   });
   return {raw,groups:out,time:raw.split(" ").find(x=>/^\d{6}Z$/.test(x))};
 }
@@ -698,21 +710,21 @@ function render(){
     }
     let age="",stale=false;
     if(m&&m.at){const min=Math.round((now-m.at)/60000);stale=min>90;age="hace "+(min<120?min+" min":Math.round(min/60)+" h");}
-    let worst=null,tafNear=false;
+    let worst=null,wcat=null,tafNear=false;const upCat=g=>{if(wcat===null||CATS.indexOf(g.cat)>CATS.indexOf(wcat))wcat=g.cat;};
     const cS=now,cE=now+3*H; // color del cuadro TAF: peor tramo entre ahora y +3 h (como el mapa de colores)
-    const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(overlap(cS,cE,+g.from,+g.to)&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;const imc=hit&&VI(g.cc)==="IMC",p40=imc&&/^PROB40\b/.test(g.line),p30=imc&&allP30&&/^PROB30\b/.test(g.line),pi=p40||p30;return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}${pi?" probimc":""}"${pi?` title="${p40?"PROB40 con IMC en tu ventana de vuelo":"PROB30 con IMC en tu ventana en los 3 aeródromos"}"`:""}>${esc(g.line)}</span>`;}).join(""):"";
+    const tafLines=t?t.groups.map(g=>{const hit=overlap(win.s,win.e,+g.from,+g.to);if(overlap(cS,cE,+g.from,+g.to)){if(worst===null||RANK[g.cc]>RANK[worst])worst=g.cc;upCat(g);}const imc=hit&&VI(g.cc)==="IMC",p40=imc&&/^PROB40\b/.test(g.line),p30=imc&&allP30&&/^PROB30\b/.test(g.line),pi=p40||p30;return `<span class="tl bar-${g.cc} ${hit?"hit":"dim"}${pi?" probimc":""}"${pi?` title="${p40?"PROB40 con IMC en tu ventana de vuelo":"PROB30 con IMC en tu ventana en los 3 aeródromos"}"`:""}>${esc(g.line)}</span>`;}).join(""):"";
     if(t&&worst===null&&t.groups.length){ // el TAF no cubre las próximas 3 h: usar el tramo o tramos más cercanos
       const dist=g=>Math.max(0,+g.from-cE,cS-+g.to),dmin=Math.min(...t.groups.map(dist));
-      for(const g of t.groups)if(dist(g)===dmin&&(worst===null||RANK[g.cc]>RANK[worst]))worst=g.cc;
+      for(const g of t.groups)if(dist(g)===dmin){if(worst===null||RANK[g.cc]>RANK[worst])worst=g.cc;upCat(g);}
       tafNear=true;
     }
     const isHit=n=>!!(n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to));
     const nlist=(NOT[id]||[]).filter(n=>!n.area&&(!n.to||n.to==="PERM"||+n.to>now)).sort((a,b)=>(isHit(b)-isHit(a))||((b.issued||0)-(a.issued||0)));
     const nNew=nlist.filter(n=>n.issued&&now-n.issued<=24*H).length,nHit=nlist.filter(isHit).length;
-    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR${m?" · "+m.cc:""}">${m?VI(m.cc):"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF ahora → +3 h${worst?" · "+worst:""}">${worst?VI(worst):"—"}</span></a>`);
+    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR${m?" · "+m.cc:""}">${m?m.cat:"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF ahora → +3 h${worst?" · "+worst:""}">${wcat||"—"}</span></a>`);
     const el=document.createElement("article");el.className="ad"+(closed?" closed":late?" late":"");el.id="ad-"+slot;
     el.innerHTML=`<div class="ad-head"><div class="ad-id"><label class="sr" for="adsel${slot}">Aeródromo ${slot+1}</label><select class="adsel" id="adsel${slot}" data-slot="${slot}" title="Cambiar aeródromo">${adOptions(id)}</select></div>
-      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc:""}"><small>METAR</small>${m?VI(m.cc):"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst+(tafNear?" · el TAF no cubre las próximas 3 h: tramo más cercano":" · peor tramo entre ahora y +3 h"):""}"><small>TAF${tafNear?" ≈":""}</small>${worst?VI(worst):"—"}</div></div></div>${ops}
+      <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc+" · categoría "+m.cat:""}"><small>METAR</small>${m?m.cat:"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst+" · categoría "+wcat+(tafNear?" · el TAF no cubre las próximas 3 h: tramo más cercano":" · peor tramo entre ahora y +3 h"):""}"><small>TAF${tafNear?" ≈":""}</small>${wcat||"—"}</div></div></div>${ops}
       <div class="ad-body">
         <div class="sec"><div class="sec-h"><span class="label">METAR</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
           ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
@@ -936,7 +948,7 @@ $("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";ls
 $("live").addEventListener("click",e=>{if(e.target.closest("button"))return;$("live").classList.toggle("zoom");});
 
 /* ---------- instrucciones ---------- */
-$("helpLegend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${VI(n)}</span><b>${n}</b><span>${n==="RED"?"&lt;800 m · &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
+$("helpLegend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${n}</span><span>${n==="RED"?"&lt;800 m · &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
 let helpReturn=null;
 function openHelp(){helpReturn=document.activeElement;$("help").hidden=false;document.body.style.overflow="hidden";$("helpClose").focus();}
 function closeHelp(){$("help").hidden=true;document.body.style.overflow="";if(helpReturn)helpReturn.focus();}
@@ -946,7 +958,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611051252";
+const BUILD="202611051420";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
