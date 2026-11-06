@@ -30,15 +30,13 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
 .in{max-width:1800px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.top-in{padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.top-in{padding-block:10px;display:grid;grid-template-columns:1fr auto 1fr;gap:10px 18px;align-items:center}
+.top-in h1{justify-self:start}
+.actions{justify-self:end;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 h1{font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.5rem;margin:0;line-height:1.1}
 h1 small{display:block;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-stretch:100%}
-.summary{display:flex;gap:8px;flex-wrap:wrap}
-.sum{display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);font:700 .85rem var(--mono);border:1px solid var(--line);border-radius:4px;padding:4px 6px 4px 8px}
-.sum.off{opacity:.45}
-.sum.warnsum{border-color:var(--amb);box-shadow:inset 0 0 0 1px var(--amb)}
-.clock{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;line-height:1.2}
-.clock b{font-size:1.35rem;display:block}
+.clock{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:center;line-height:1.2}
+.clock b{font-size:1.6rem;display:block}
 .clock span{color:var(--muted);font-size:.75rem}
 .livebadge{display:inline-flex;align-items:center;gap:6px;font:600 .75rem var(--mono);color:var(--muted);background:transparent;border:0;padding:0}
 button.livebadge{border:1px solid var(--line);border-radius:14px;padding:4px 10px;cursor:pointer}
@@ -48,7 +46,15 @@ button.livebadge.busy i{animation:pulse .8s ease-in-out infinite alternate}
 .livebadge i{width:8px;height:8px;border-radius:50%;background:var(--off)}
 .livebadge.ok i{background:var(--grn)}.livebadge.err i{background:var(--red)}
 .flight{border-bottom:1px solid var(--line);background:var(--field)}
-.flight-in{padding-block:8px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.flight-in{padding-block:6px;display:grid;gap:6px}
+.fl-toggle{all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;padding:4px 0;border-radius:4px}
+.fl-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fl-now{font:600 .85rem var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.fl-toggle .chev{margin-left:4px;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.flight.open .fl-toggle .chev{transform:rotate(-135deg) translateY(-2px)}
+.fl-short{display:none}
+.fl-body{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding-bottom:4px}
+.flight:not(.open) .fl-body{display:none}
 .tpg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .tpl{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .tp{display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:3px 4px;font-family:var(--mono)}
@@ -119,6 +125,8 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .nblock summary::-webkit-details-marker{display:none}
 .nblock summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .ntag{font:800 .72rem var(--mono);letter-spacing:.14em;background:var(--nink);color:var(--nbg);padding:3px 8px;border-radius:3px}
+.nsum{font:600 .82rem var(--mono);color:var(--muted)}
+.nbadges{display:flex;flex-wrap:wrap;gap:6px 8px}
 .nb{font:700 .76rem var(--mono);padding:3px 8px;border-radius:12px;border:1px solid transparent;white-space:nowrap}
 .nb.new{background:var(--amb);color:var(--dark)}
 .nb.hit{background:var(--warn);color:#fff}
@@ -264,8 +272,11 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
   .clock span{display:none}
   h1{font-size:1.25rem}
   .brand .crest{height:38px}
-  .summary{order:3;width:100%}
-  .sum{flex:1;justify-content:center}
+  .top-in{grid-template-columns:1fr auto;grid-template-areas:"brand clock" "actions actions";gap:8px 12px}
+  .top-in h1{grid-area:brand}.clock{grid-area:clock;text-align:right}.actions{grid-area:actions}
+  .clock b{font-size:1.3rem}
+  .fl-long{display:none}.fl-short{display:inline}
+  .fl-toggle{gap:8px}.fl-now{font-size:.8rem}
   .cc{min-width:60px;font-size:1.2rem}
   .legend{grid-template-columns:1fr}
   .raw{font-size:.82rem}
@@ -295,18 +306,22 @@ html{scroll-behavior:smooth}
 <div class="top">
   <div class="in top-in">
     <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><img class="crest logo-l" src="logo-light.png" alt="METPANEL"><img class="crest logo-d" src="logo-dark.png" alt="METPANEL"><span class="bt"><small>Meteorología aeronáutica</small>PANEL METEO<span class="qm" aria-hidden="true">?</span></span></button></h1>
-    <nav class="summary" id="summary" aria-label="Resumen por aeródromo"></nav>
+    <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
+    <div class="actions">
+    <button type="button" class="logout" id="logoutBtn" title="Cerrar sesión">Salir</button>
     <button type="button" class="livebadge" id="liveBadge" title="Pulsa para actualizar todos los datos y mapas"><i></i> Conectando…</button>
     <button type="button" class="themebtn" id="themeBtn" aria-label="Tema: sistema" title="Tema: sistema"><svg viewBox="0 0 24 24" aria-hidden="true"><g class="i-sys"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="fill"/></g><g class="i-light"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g><g class="i-dark"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></g></svg></button>
-    <button type="button" class="logout" id="logoutBtn" title="Cerrar sesión">Salir</button>
-    <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
+    </div>
   </div>
 </div>
   <div class="flight" id="flight"><div class="in flight-in">
+    <button type="button" class="fl-toggle" id="flToggle" aria-expanded="true" aria-controls="flBody"><span class="tpl"><span class="fl-long">Ventana de vuelo</span><span class="fl-short">Vuelo</span></span><span class="fl-now" id="flNow"></span><span class="chev" aria-hidden="true"></span></button>
+    <div class="fl-body" id="flBody">
     <div class="tpg"><span class="tpl">Inicio vuelo</span><div class="tp" role="group" aria-label="Inicio del vuelo"><span class="day"><button type="button" data-k="S" data-u="d" data-n="-1" aria-label="Día anterior">‹</button><span class="dd" id="tpSd"></span><button type="button" data-k="S" data-u="d" data-n="1" aria-label="Día siguiente">›</button></span><span class="f"><input id="tpSh" data-k="S" data-f="h" inputmode="numeric" maxlength="2" aria-label="Inicio del vuelo: hora"><span class="st"><button type="button" data-k="S" data-u="h" data-n="1" aria-label="Sumar una hora">▲</button><button type="button" data-k="S" data-u="h" data-n="-1" aria-label="Restar una hora">▼</button></span></span><span class="sep">:</span><span class="f"><input id="tpSm" data-k="S" data-f="m" inputmode="numeric" maxlength="2" aria-label="Inicio del vuelo: minutos"><span class="st"><button type="button" data-k="S" data-u="m" data-n="1" aria-label="Sumar 5 minutos">▲</button><button type="button" data-k="S" data-u="m" data-n="-1" aria-label="Restar 5 minutos">▼</button></span></span><span class="z">Z</span></div></div>
     <div class="tpg"><span class="tpl">Fin vuelo</span><div class="tp" role="group" aria-label="Fin del vuelo"><span class="day"><button type="button" data-k="E" data-u="d" data-n="-1" aria-label="Día anterior">‹</button><span class="dd" id="tpEd"></span><button type="button" data-k="E" data-u="d" data-n="1" aria-label="Día siguiente">›</button></span><span class="f"><input id="tpEh" data-k="E" data-f="h" inputmode="numeric" maxlength="2" aria-label="Fin del vuelo: hora"><span class="st"><button type="button" data-k="E" data-u="h" data-n="1" aria-label="Sumar una hora">▲</button><button type="button" data-k="E" data-u="h" data-n="-1" aria-label="Restar una hora">▼</button></span></span><span class="sep">:</span><span class="f"><input id="tpEm" data-k="E" data-f="m" inputmode="numeric" maxlength="2" aria-label="Fin del vuelo: minutos"><span class="st"><button type="button" data-k="E" data-u="m" data-n="1" aria-label="Sumar 5 minutos">▲</button><button type="button" data-k="E" data-u="m" data-n="-1" aria-label="Restar 5 minutos">▼</button></span></span><span class="z">Z</span></div></div>
     <button type="button" id="fNow">Desde ahora</button>
     <span class="fl-sum" id="fSum"></span>
+    </div>
   </div></div>
 
 <div class="wrap">
@@ -355,10 +370,10 @@ html{scroll-behavior:smooth}
           <rect x="1" y="1" width="598" height="298" rx="8" class="s-bg"/>
           <rect x="12" y="12" width="576" height="30" rx="4" class="s-bar"/>
           <text x="24" y="32" class="s-t">PANEL METEO</text>
-          <rect x="190" y="19" width="56" height="16" rx="3" class="s-chip"/><rect x="252" y="19" width="56" height="16" rx="3" class="s-chip"/><rect x="314" y="19" width="56" height="16" rx="3" class="s-chip"/>
-          <text x="560" y="32" class="s-t" text-anchor="end">20:43 Z</text>
+          <rect x="452" y="19" width="34" height="16" rx="3" class="s-fl"/><rect x="492" y="19" width="66" height="16" rx="8" class="s-fl"/><circle cx="572" cy="27" r="8" class="s-fl"/>
+          <text x="300" y="32" class="s-t" text-anchor="middle">20:43 Z</text>
           <rect x="12" y="48" width="576" height="24" rx="4" class="s-fl"/>
-          <text x="24" y="64" class="s-s">Inicio ‹ día › 08:45 Z   ·   Fin ‹ día › 10:45 Z</text>
+          <text x="24" y="64" class="s-s">Ventana de vuelo  mié 0845Z → 1045Z · 2 h 00  ▾</text>
           <g class="s-card"><rect x="12" y="80" width="184" height="128" rx="5"/><rect x="204" y="80" width="184" height="128" rx="5"/><rect x="396" y="80" width="192" height="128" rx="5"/></g>
           <g class="s-raw"><rect x="22" y="104" width="164" height="14" rx="2"/><rect x="22" y="126" width="164" height="30" rx="2"/><rect x="214" y="104" width="164" height="14" rx="2"/><rect x="214" y="126" width="164" height="30" rx="2"/><rect x="406" y="104" width="172" height="14" rx="2"/><rect x="406" y="126" width="172" height="30" rx="2"/></g>
           <g class="s-not"><rect x="13" y="186" width="182" height="21"/><rect x="205" y="186" width="182" height="21"/><rect x="397" y="186" width="190" height="21"/></g>
@@ -369,10 +384,10 @@ html{scroll-behavior:smooth}
           <g class="s-cn"><text x="-15" y="31">1</text><text x="-15" y="64">2</text><text x="-15" y="148">3</text><text x="-15" y="200">4</text><text x="-15" y="257">5</text></g>
         </svg>
         <ol class="hl">
-          <li><b>Barra superior:</b> resumen de colores de cada aeródromo (METAR · TAF), estado de los datos y hora UTC. Pulsa un aeródromo para ir a su tarjeta. El botón redondo cambia el tema: <b>sistema → claro → oscuro</b>.</li>
-          <li><b>Ventana de vuelo:</b> inicio y fin del vuelo en Z. Todo lo demás se calcula con estas horas.</li>
+          <li><b>Barra superior:</b> el logotipo abre estas instrucciones; en el centro, la <b>hora UTC</b>; a la derecha, <b>Salir</b>, <b>Actualizado</b> (púlsalo para volver a descargar todo) y el botón de <b>tema</b> (sistema → claro → oscuro).</li>
+          <li><b>Ventana de vuelo:</b> inicio y fin del vuelo en Z; pulsa la barra para desplegarla o plegarla (recuerda tu elección).</li>
           <li><b>Tarjetas de aeródromo:</b> METAR y TAF en bruto con su color OTAN.</li>
-          <li><b>NOTAM:</b> plegados; solo avisan de lo importante.</li>
+          <li><b>NOTAM:</b> plegados; solo dicen cuántos hay nuevos.</li>
           <li><b>Mapas:</b> significativo de baja cota, satélite y colores OTAN.</li>
         </ol>
         <p class="hp"><b>Acceso:</b> el panel pide usuario y contraseña al entrar; con ellos se descifra el mapa sectorial. Marca <b>Recordar en este equipo</b> para no tener que escribirlos cada vez, y pulsa <b>Salir</b> (arriba a la derecha) para cerrar la sesión en un equipo compartido.</p>
@@ -408,6 +423,7 @@ html{scroll-behavior:smooth}
         <pre class="raw taf-raw" aria-hidden="true"><span class="tl bar-BLU hit">TAF LEMO 031400Z 0315/0415 23010KT CAVOK</span><span class="tl bar-WHT hit">TEMPO 0408/0412 6000 SHRA BKN025</span><span class="tl bar-YLO hit probimc">PROB40 0410/0414 3000 RA BKN008</span><span class="tl bar-GRN dim">BECMG 0418/0420 4000 BR BKN012</span></pre>
         <ul class="hl">
           <li>Cada tramo va en su línea, con su <b>color OTAN</b> en el borde.</li>
+          <li>Arriba a la derecha, la <b>antigüedad del TAF</b> desde su emisión (en rojo si pasa de 9 h).</li>
           <li><b>Negrita y fondo amarillo</b>: tramos que coinciden con tu vuelo. Atenuados: fuera de tu ventana.</li>
           <li><b style="color:var(--red)">Borde rojo</b>, solo en tramos <b>IMC dentro de tu ventana de vuelo</b> (también PROB TEMPO):<br>· <b>PROB40</b>: se marca en cada aeródromo por separado.<br>· <b>PROB30</b>: se marca solo si los <b>tres aeródromos</b> en pantalla tienen un PROB30 IMC en tu ventana.</li>
           <li>El <b>cuadro TAF</b> de cada tarjeta toma el peor tramo entre ahora y +3 h. Si el TAF aún no cubre ese periodo, pone <b>TAF ≈</b> y usa el tramo más cercano.</li>
@@ -427,9 +443,9 @@ html{scroll-behavior:smooth}
 
       <section class="hs">
         <h3><span class="hn">6</span>NOTAM</h3>
-        <div class="nblock hdn" aria-hidden="true"><div class="hsum"><span class="ntag">NOTAM</span><span class="nb new">⚠ 1 nuevo · 24 h</span><span class="nb hit">2 afectan al vuelo</span><span class="nb muted">9 en vigor</span><span class="chev"></span></div></div>
+        <div class="nblock hdn" aria-hidden="true"><div class="hsum"><span class="ntag">NOTAM</span><span class="nsum">1 nuevo</span><span class="chev"></span></div></div>
         <ul class="hl">
-          <li>Plegados por defecto. <b>⚠ nuevo</b>: publicado en las últimas 24 h. <b>Rojo</b>: cuántos están en vigor durante tu vuelo.</li>
+          <li>Plegados, solo indican cuántos hay <b>nuevos</b> (últimas 24 h). Al desplegar: <b>⚠ nuevos</b>, en <b>rojo</b> cuántos están en vigor durante tu vuelo, y la lista completa.</li>
           <li>Pulsa la barra para verlos: primero los que afectan al vuelo.</li>
           <li>Se omiten los de <b>áreas</b> (zonas restringidas, drones, láser, exhibiciones). Fuente: FAA, cada 30 min. Confirma siempre en ENAIRE o NAV Portugal.</li>
         </ul>
@@ -510,6 +526,8 @@ function applyWin(){
   ls.set("mp-fs",win.s);ls.set("mp-fe",win.e);
   paintTP("S",win.s);paintTP("E",win.e);
   const m=Math.round((win.e-win.s)/60000);$("fSum").textContent=`${Math.floor(m/60)} h ${p2(m%60)} min`;
+  const z=t=>p2(new Date(t).getUTCHours())+p2(new Date(t).getUTCMinutes())+"Z",dd=t=>new Date(t).toLocaleDateString("es-ES",{weekday:"short",day:"2-digit",timeZone:"UTC"});
+  $("flNow").textContent=`${dd(win.s)} ${z(win.s)} → ${dd(win.e)===dd(win.s)?"":dd(win.e)+" "}${z(win.e)} · ${Math.floor(m/60)} h ${p2(m%60)}`;
   if(typeof renderSig==="function"){sigAuto=true;renderSig();}
   render();
 }
@@ -541,6 +559,10 @@ $("flight").addEventListener("input",e=>{
 $("flight").addEventListener("focusout",e=>{const i=e.target.closest("input[data-k]");if(i)typedWin(i.dataset.k,i.dataset.f);});
 $("flight").addEventListener("focusin",e=>{const i=e.target.closest("input[data-k]");if(i)i.value="";});
 $("fNow").addEventListener("click",()=>{win.s=Math.ceil(Date.now()/M5)*M5;win.e=win.s+2*H;applyWin();});
+
+function setFlightOpen(o){$("flight").classList.toggle("open",o);$("flToggle").setAttribute("aria-expanded",o);ls.set("mp-flopen",o?"1":"0");}
+setFlightOpen(ls.get("mp-flopen")==="1");
+$("flToggle").addEventListener("click",()=>setFlightOpen(!$("flight").classList.contains("open")));
 
 /* ---------- METAR / TAF ---------- */
 function parseWx(tok){
@@ -693,7 +715,7 @@ function notamCard(n){
 }
 let OBS={},NOT={},loaded=false,notamOk=false;const NOPEN={};
 function render(){
-  const cards=$("cards"),sum=$("summary");if(!win.s)return;cards.innerHTML="";sum.innerHTML="";
+  const cards=$("cards");if(!win.s)return;cards.innerHTML="";
   const now=Date.now();
   // PROB IMC dentro de la ventana: PROB40 se marca siempre; PROB30 solo si los 3 aeródromos lo tienen
   const probImc=(id,n)=>{const t=(OBS[id]||{}).taf;return !!t&&t.groups.some(g=>new RegExp("^PROB"+n+"\\b").test(g.line)&&VI(g.cc)==="IMC"&&overlap(win.s,win.e,+g.from,+g.to));};
@@ -708,6 +730,8 @@ function render(){
         ${lpbjBar(win.s,win.e)}
         <span>L–J 0830–1715 · V 0830–1230 (UTC invierno) · fines de semana y festivos solo PPR</span></div>`;
     }
+    let tAge="",tStale=false;
+    if(t&&t.time){const tm=Math.round((now-tafIssued(t))/60000);tStale=tm>9*60;tAge=tm>=0?"hace "+(tm<120?tm+" min":Math.round(tm/60)+" h")+(tStale?" · antiguo":""):"";}
     let age="",stale=false;
     if(m&&m.at){const min=Math.round((now-m.at)/60000);stale=min>90;age="hace "+(min<120?min+" min":Math.round(min/60)+" h");}
     let worst=null,wcat=null,tafNear=false;const upCat=g=>{if(wcat===null||CATS.indexOf(g.cat)>CATS.indexOf(wcat))wcat=g.cat;};
@@ -721,20 +745,18 @@ function render(){
     const isHit=n=>!!(n.from&&overlap(win.s,win.e,+n.from,n.to==="PERM"||!n.to?Infinity:+n.to));
     const nlist=(NOT[id]||[]).filter(n=>!n.area&&(!n.to||n.to==="PERM"||+n.to>now)).sort((a,b)=>(isHit(b)-isHit(a))||((b.issued||0)-(a.issued||0)));
     const nNew=nlist.filter(n=>n.issued&&now-n.issued<=24*H).length,nHit=nlist.filter(isHit).length;
-    sum.insertAdjacentHTML("beforeend",`<a class="sum ${closed?"off":late?"warnsum":""}" href="#ad-${slot}">${id}<span class="chip ${m?"c-"+m.cc:""}" title="METAR${m?" · "+m.cc:""}">${m?m.cat:"—"}</span><span class="chip ${worst?"c-"+worst:""}" title="TAF ahora → +3 h${worst?" · "+worst:""}">${wcat||"—"}</span></a>`);
     const el=document.createElement("article");el.className="ad"+(closed?" closed":late?" late":"");el.id="ad-"+slot;
     el.innerHTML=`<div class="ad-head"><div class="ad-id"><label class="sr" for="adsel${slot}">Aeródromo ${slot+1}</label><select class="adsel" id="adsel${slot}" data-slot="${slot}" title="Cambiar aeródromo">${adOptions(id)}</select></div>
       <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc+" · categoría "+m.cat:""}"><small>METAR</small>${m?m.cat:"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst+" · categoría "+wcat+(tafNear?" · el TAF no cubre las próximas 3 h: tramo más cercano":" · peor tramo entre ahora y +3 h"):""}"><small>TAF${tafNear?" ≈":""}</small>${wcat||"—"}</div></div></div>${ops}
       <div class="ad-body">
         <div class="sec"><div class="sec-h"><span class="label">METAR</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
           ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
-        <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age">resaltado = ventana de vuelo</span></div>
+        <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age${tStale?" stale":""}" title="Antigüedad desde la emisión del TAF">${tAge}</span></div>
           ${t?`<pre class="raw taf-raw">${tafLines}</pre>`:`<p class="empty">${loaded?"Sin TAF disponible.":"Cargando…"}</p>`}</div>
       </div>
       <details class="nblock" data-slot="${slot}"${NOPEN[slot]?" open":""}>
-        <summary><span class="ntag">NOTAM</span>${!loaded?'<span class="nb muted">Cargando…</span>':!notamOk?'<span class="nb muted">No disponibles</span>':
-          `${nNew?`<span class="nb new">⚠ ${nNew} nuevo${nNew===1?"":"s"} · 24 h</span>`:""}${nHit?`<span class="nb hit">${nHit} afecta${nHit===1?"":"n"} al vuelo</span>`:'<span class="nb ok">Ninguno afecta al vuelo</span>'}<span class="nb muted">${nlist.length} en vigor</span>`}<span class="chev" aria-hidden="true"></span></summary>
-        <div class="nbody">${nlist.length?`<div class="notams">${nlist.map(notamCard).join("")}</div>`:`<p class="empty">${notamOk?"No hay NOTAM de aeródromo en vigor.":"No se han podido descargar los NOTAM."}</p>`}
+        <summary><span class="ntag">NOTAM</span><span class="nsum">${!loaded?"Cargando…":!notamOk?"No disponibles":nNew?`${nNew} nuevo${nNew===1?"":"s"}`:"Sin nuevos"}</span><span class="chev" aria-hidden="true"></span></summary>
+        <div class="nbody">${loaded&&notamOk?`<div class="nbadges">${nNew?`<span class="nb new">⚠ ${nNew} nuevo${nNew===1?"":"s"} · 24 h</span>`:'<span class="nb ok">Ninguno nuevo en 24 h</span>'}${nHit?`<span class="nb hit">${nHit} afecta${nHit===1?"":"n"} al vuelo</span>`:'<span class="nb ok">Ninguno afecta al vuelo</span>'}<span class="nb muted">${nlist.length} en vigor</span></div>`:""}${nlist.length?`<div class="notams">${nlist.map(notamCard).join("")}</div>`:`<p class="empty">${notamOk?"No hay NOTAM de aeródromo en vigor.":"No se han podido descargar los NOTAM."}</p>`}
           <p class="note">Sin NOTAM de áreas (zonas restringidas, drones, avisos). Fuente: FAA. Confirma en <a href="${id.startsWith("LP")?"https://ops.nav.pt/":"https://notampib.enaire.es/"}" target="_blank" rel="noopener">${id.startsWith("LP")?"NAV Portugal":"ENAIRE"} ↗</a>.</p></div>
       </details>`;
     cards.appendChild(el);
@@ -958,7 +980,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611051420";
+const BUILD="202611061900";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
