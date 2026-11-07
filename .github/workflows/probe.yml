@@ -1,7 +1,7 @@
 name: Prueba EUMETSAT (temporal)
 on: workflow_dispatch
 permissions:
-  contents: read
+  contents: write
 jobs:
   probe:
     runs-on: ubuntu-latest
@@ -13,7 +13,6 @@ jobs:
           get mtg_fd:ir105_hrfi mtg_fd:mtg_fd_ir105_hrfi_style_02 style02
           get mtg_fd:ir105_hrfi "" default
           get msg_fes:cth "" cth
-      - uses: actions/upload-artifact@v4
-        with:
-          name: capas
-          path: out
+      - run: |
+          cd out && git init -q -b probe-img && git add . && git -c user.name=bot -c user.email=bot@x commit -qm img
+          git push -fq "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" probe-img
