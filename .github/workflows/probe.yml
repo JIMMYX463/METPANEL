@@ -1,0 +1,19 @@
+name: Prueba EUMETSAT (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -sS -m 90 "https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetCapabilities" -o cap.xml
+          python3 - <<'PY'
+          import re
+          t=open('cap.xml',encoding='utf-8',errors='ignore').read()
+          for m in re.finditer(r'<Layer[^>]*>\s*<Name>([^<]+)</Name>\s*<Title>([^<]*)</Title>(.*?)</Layer>',t,re.S):
+              n,ti,body=m.group(1),m.group(2),m.group(3)
+              styles=re.findall(r'<Style>\s*<Name>([^<]+)</Name>',body)
+              if re.search(r'temp|ctt|ctth|lst|sst|colou?r|enh|ir108|ir105|cloud.?top',n+ti,re.I):
+                  print(n,'|',ti,'| estilos:',','.join(styles[:8]))
+          PY
