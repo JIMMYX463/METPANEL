@@ -171,7 +171,6 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 #live{background:#05080b}
 #live img{object-fit:fill;cursor:inherit}
 .secov{position:absolute;max-width:none;transform-origin:50% 50%;pointer-events:none;filter:drop-shadow(0 0 1px rgba(0,0,0,.95)) drop-shadow(0 0 1px rgba(0,0,0,.6))}
-#satPrec{opacity:.85}
 #live{cursor:zoom-in}
 #live.zoom{inset:auto;top:50%;left:50%;transform:translate(-50%,-50%);width:min(100vw,150vh);height:auto;aspect-ratio:3/2;cursor:zoom-out;background:#05080b;box-shadow:0 0 0 100vmax rgba(0,0,0,.92)}
 #live .msg{position:absolute;inset:0;display:grid;place-items:center;color:#c9d3dd;font-size:.88rem;text-align:center;padding:20px}
@@ -340,13 +339,12 @@ html{scroll-behavior:smooth}
       <div class="sec-h"><span class="label">Satélite · Meteosat</span><span class="age" id="satAge"></span></div>
       <div class="live mapframe" id="live">
         <img id="satLive" alt="Imagen satélite de la península ibérica">
-        <img id="satPrec" alt="" aria-hidden="true" hidden>
         <img id="satCoast" alt="" aria-hidden="true">
         <img id="secOv" class="secov" alt="" aria-hidden="true" hidden>
         <div id="marks"></div>
         <div class="msg" id="satMsg" hidden></div>
       </div>
-      <div class="row"><button type="button" id="satLayer">Cambiar a infrarrojo + precipitación</button><span class="note" id="satLegend" hidden>Colores: precipitación estimada (H SAF)</span><button type="button" id="satView" aria-pressed="false">Zoom sectores</button><button type="button" id="secBtn" aria-pressed="true" hidden>Sectores ✓</button><span class="note">EUMETSAT · cada 10 min</span></div>
+      <div class="row"><button type="button" id="satLayer">Cambiar a infrarrojo + temperatura</button><span class="note" id="satLegend" hidden>Colores: temperatura de topes nubosos (azul → violeta → rojo = más frío)</span><button type="button" id="satView" aria-pressed="false">Zoom sectores</button><button type="button" id="secBtn" aria-pressed="true" hidden>Sectores ✓</button><span class="note">EUMETSAT · cada 10 min</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Mapa de colores OTAN</span><span class="age" id="colAge"></span></div>
@@ -455,7 +453,7 @@ html{scroll-behavior:smooth}
         <h3><span class="hn">7</span>Mapas</h3>
         <ul class="hl">
           <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z con la <b>fecha</b> de cada mapa; <b>✈</b> marca el más cercano a tu despegue y se elige solo. Una pestaña <b>discontinua</b> es un mapa anterior: aún no se ha publicado el de ese día.</li>
-          <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> lleva superpuesta en color la precipitación estimada. Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
+          <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> colorea la temperatura de los topes nubosos, de azul a rojo cuanto más fríos (nubes más altas y convectivas). Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
           <li><b>Toca un mapa</b> para verlo a pantalla completa; vuelve a tocar para cerrarlo.</li>
         </ul>
@@ -951,19 +949,16 @@ $("secOv").addEventListener("load",secReady);
 $("secOv").addEventListener("error",()=>{$("secOv").hidden=true;});
 $("secBtn").addEventListener("click",()=>{showSec=!showSec;ls.set("mp-sec",showSec?"1":"0");placeOverlay();});
 $("satView").addEventListener("click",()=>{BB=BB===VIEWS.sec?VIEWS.pen:VIEWS.sec;ls.set("mp-view",BB===VIEWS.sec?"sec":"pen");refreshSat();placeMarks();placeOverlay();});
-const LAYERS={ir:["msg_fes:ir108","mtg_fd:ir105_hrfi"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
+const LAYERS={ir:["mtg_fd:ir105_hrfi|mtg_fd:mtg_fd_ir105_hrfi_style_01","msg_fes:ir108"],vis:["msg_fes:rgb_naturalenhncd","mtg_fd:rgb_truecolour"]};
 let satMode=ls.get("mp-sat")==="ir"?"ir":"vis";
-const PREC=["msg_fes:h60b","mtg_fd:h40b"];
-const satUrl=l=>"https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles=&format=image/png&transparent=true&crs=EPSG:4326&bbox="+[BB.s,BB.w,BB.n,BB.e].join(",")+"&width=900&height=600&_="+Math.floor(Date.now()/600000);
+const satUrl=x=>{const[l,st=""]=x.split("|");return "https://view.eumetsat.int/geoserver/ows?service=WMS&version=1.3.0&request=GetMap&layers="+l+"&styles="+st+"&format=image/png&transparent=true&crs=EPSG:4326&bbox="+[BB.s,BB.w,BB.n,BB.e].join(",")+"&width=900&height=600&_="+Math.floor(Date.now()/600000);};
 function refreshSat(){
   const im=$("satLive"),msg=$("satMsg");let i=0;const list=LAYERS[satMode];
-  im.onload=()=>{im.style.visibility='';msg.hidden=true;$("satAge").textContent=(satMode==="ir"?"IR 10.8 + precipitación · ":"visible · ")+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
+  im.onload=()=>{im.style.visibility='';msg.hidden=true;$("satAge").textContent=(satMode==="ir"?"IR + temperatura · ":"visible · ")+new Date().toISOString().slice(11,16)+"Z";$("satAge").className="age";};
   im.onerror=()=>{i++;if(i<list.length){im.src=satUrl(list[i]);}else{im.style.visibility='hidden';msg.hidden=false;msg.innerHTML='No se ha podido cargar la imagen.<br>Ábrela en EUMETSAT View.';$("satAge").textContent="";}};
   im.src=satUrl(list[0]);
   const c=$("satCoast");c.onerror=()=>{c.hidden=true;};c.src=satUrl("backgrounds:ne_10m_coastline");
-  const pr=$("satPrec");pr.hidden=satMode!=="ir";
-  if(satMode==="ir"){let j=0;pr.onerror=()=>{j++;if(j<PREC.length)pr.src=satUrl(PREC[j]);else pr.hidden=true;};pr.src=satUrl(PREC[0]);}
-  $("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo + precipitación";
+  $("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo + temperatura";
   $("satLegend").hidden=satMode!=="ir";
 }
 $("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";ls.set("mp-sat",satMode);refreshSat();});
@@ -980,7 +975,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611061900";
+const BUILD="202611080045";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
