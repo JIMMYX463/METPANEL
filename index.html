@@ -932,7 +932,7 @@ function placeMarks(){
 
 /* ---------- satélite (EUMETSAT WMS) ---------- */
 /* Vistas en EPSG:4326 con proporción 3:2 (grados de lon / grados de lat = 1,5) */
-const VIEWS={pen:{s:35.0,w:-10,n:44.6,e:4.4},sec:{s:36.8,w:-9.45,n:40.6,e:-3.75}};
+const VIEWS={pen:{s:33.8,w:-14,n:46.2,e:4.6},sec:{s:36.8,w:-9.45,n:40.6,e:-3.75}};
 let BB=VIEWS[ls.get("mp-view")==="sec"?"sec":"pen"];
 /* Sectores (KML "Mapa Sectorial": LatLonBox y rotación en grados, antihoraria) */
 const SECT={n:40.18845,s:37.49201666666667,e:-4.21225,w:-8.654866666666667,rot:2.618};
@@ -975,7 +975,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611080050";
+const BUILD="202611080055";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
