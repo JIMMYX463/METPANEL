@@ -1,0 +1,25 @@
+name: Prueba GRAMET (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          T=$(date +%s)
+          U="https://www.ogimet.com/display_gramet.php?icao=LEBZ_LPBJ&hini=0&tref=$T&hfin=2&fl=230&enviar=Enviar"
+          curl -sS -m 90 -D h.txt -H "Origin: https://jimmyx463.github.io" -A "Mozilla/5.0" "$U" -o p.html; cat h.txt
+          grep -n -iE "gramet_|<center|<table|<body" p.html | head -20
+          IMG=$(grep -oE '/tmp/gramet_[^"]+\.png' p.html | head -1); curl -sS -D - -o g.png "https://www.ogimet.com$IMG" | head -12; file g.png
+          npm i -s playwright@1.56.1 >/dev/null 2>&1 && npx -y playwright@1.56.1 install chromium >/dev/null 2>&1
+          cat > m.js <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{const b=await chromium.launch();
+          for(const w of [800,1000,1200,1400]){const p=await b.newPage({viewport:{width:w,height:900}});
+          await p.goto(process.argv[2],{waitUntil:'load',timeout:90000});
+          const r=await p.$eval('img[src*="gramet_"]',e=>{const b=e.getBoundingClientRect();return {x:b.x,y:b.y+scrollY,w:b.width,h:b.height,nw:e.naturalWidth,nh:e.naturalHeight}});
+          console.log(w,JSON.stringify(r));await p.close();}
+          await b.close();})();
+          JS
+          node m.js "$U"
