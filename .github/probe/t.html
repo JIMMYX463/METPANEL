@@ -8,6 +8,7 @@ function findGramet(route,hini,hfin,t0,t1){
   const HR=3600000,base=Math.floor(t0/HR)*HR,st=D(base+hini*HR).slice(0,10),en=D(base+hfin*HR).slice(0,10);
   const r0=Math.floor((t0-3.5*HR)/(6*HR))*6*HR,runs=[r0,r0-6*HR,r0+6*HR,r0-12*HR].filter(r=>r<=t0).map(r=>D(r).slice(0,10));
   const urls=[];for(const r of runs)for(let t=Math.floor(t0/1000)-4;t<=Math.ceil(t1/1000)+2;t++)urls.push("https://www.ogimet.com/tmp/gramet_"+D(t*1000).slice(0,14)+"_"+r+"_"+route+"_"+st+"_"+en+".png");
+  window.__c=urls;
   return new Promise(res=>{let left=urls.length,done=false;urls.forEach(u=>{const i=new Image();i.onload=()=>{if(!done){done=true;res(u);}};i.onerror=()=>{if(--left===0&&!done)res(null);};i.src=u;});});
 }
 
