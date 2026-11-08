@@ -10,7 +10,7 @@ function findGramet(route,hini,hfin,t0,t1){
   const secs=[];for(let t=Math.floor(t0/1000)-4;t<=Math.ceil(t1/1000)+3;t++)secs.push(D(t*1000).slice(0,14));
   const tryList=urls=>new Promise(res=>{let left=urls.length,done=false;urls.forEach(u=>{const i=new Image();i.onload=()=>{if(!done){done=true;res(u);}};i.onerror=()=>{if(--left===0&&!done)res(null);};i.src=u+"?r="+Date.now();});});
   const pass=async()=>{for(const r of runs){const u=await tryList(secs.map(x=>"https://www.ogimet.com/tmp/gramet_"+x+"_"+r+"_"+route+"_"+st+"_"+en+".png"));if(u)return u;}return null;};
-  return pass().then(u=>u||new Promise(r=>setTimeout(r,1500)).then(pass));
+  return (async()=>{for(let k=0;k<5;k++){if(k)await new Promise(r=>setTimeout(r,800));const u=await pass();if(u)return u;}return null;})();
 }
 
 async function run(route,hini,hfin){const t0=Date.now();const fr=document.getElementById('f');
