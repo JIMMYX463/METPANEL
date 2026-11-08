@@ -13,7 +13,7 @@ from telethon.errors import SessionPasswordNeededError
 
 BOT = "meteolemobot"
 HOURS = ["00", "06", "12", "18"]
-GRAMET_IDS = [x for x in os.environ.get("GRAMET_IDS", "LEBZ,LEMO,LPBJ").split(",") if x]
+GRAMET_IDS = [x for x in os.environ.get("GRAMET_IDS", "LEBZ,LEMO").split(",") if x]
 SESSION_FILE = pathlib.Path("data/tg.session.enc")
 API_ID = int(os.environ.get("TG_API_ID") or 0)
 API_HASH = os.environ.get("TG_API_HASH", "")
