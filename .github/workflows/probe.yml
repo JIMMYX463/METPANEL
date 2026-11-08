@@ -13,9 +13,7 @@ jobs:
           const {chromium}=require('playwright');
           (async()=>{const b=await chromium.launch();const p=await b.newPage();
           await p.goto('file://'+process.cwd()+'/t.html');
-          for(const a of [["LEBZ_LPBJ",0,2],["LEBZ",1,3]]){console.log(JSON.stringify(await p.evaluate(a=>run(...a),a)));
-          const fr=p.frames().find(f=>f.url().includes('display_gramet'));console.log('real', fr?await fr.evaluate(()=>[...document.images].map(i=>i.src+' '+i.naturalWidth).join(' | ')):'no frame');
-          console.log('cand', await p.evaluate(()=>window.__c&&window.__c.slice(0,3).join(' ')));}
+          for(const a of [["LEBZ_LPBJ",0,2],["LEBZ",1,3],["LEBZ_LEMO",2,5],["LEMO",0,2],["LEBZ_LPBJ",3,6],["LPBJ",0,1]]){console.log(JSON.stringify(await p.evaluate(a=>run(...a),a)));}
           await b.close();})();
           JS
           node m.js
