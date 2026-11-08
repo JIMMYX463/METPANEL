@@ -1,0 +1,17 @@
+<!doctype html><html><body><iframe id=f style="position:absolute;left:-9999px;width:900px;height:600px"></iframe><script>
+// GRAMET-START
+// Ogimet no permite leer su página desde otro sitio, pero sí cargar la imagen. Su nombre es
+// /tmp/gramet_<petición AAAAMMDDhhmmss>_<pasada AAAAMMDDhh>_<ruta>_<inicio AAAAMMDDhh>_<fin AAAAMMDDhh>.png
+// Se pide la página en un iframe oculto y se prueban los nombres posibles alrededor de la hora de la petición.
+function findGramet(route,hini,hfin,t0,t1){
+  const D=t=>new Date(t).toISOString().replace(/[-T:]/g,"");
+  const HR=3600000,base=Math.floor(t0/HR)*HR,st=D(base+hini*HR).slice(0,10),en=D(base+hfin*HR).slice(0,10);
+  const r0=Math.floor((t0-3.5*HR)/(6*HR))*6*HR,runs=[r0,r0-6*HR,r0+6*HR,r0-12*HR].filter(r=>r<=t0).map(r=>D(r).slice(0,10));
+  const urls=[];for(const r of runs)for(let t=Math.floor(t0/1000)-4;t<=Math.ceil(t1/1000)+2;t++)urls.push("https://www.ogimet.com/tmp/gramet_"+D(t*1000).slice(0,14)+"_"+r+"_"+route+"_"+st+"_"+en+".png");
+  return new Promise(res=>{let left=urls.length,done=false;urls.forEach(u=>{const i=new Image();i.onload=()=>{if(!done){done=true;res(u);}};i.onerror=()=>{if(--left===0&&!done)res(null);};i.src=u;});});
+}
+
+async function run(route,hini,hfin){const t0=Date.now();const fr=document.getElementById('f');
+ await new Promise(r=>{fr.onload=r;fr.src="https://www.ogimet.com/display_gramet.php?icao="+route+"&hini="+hini+"&tref="+Math.floor(t0/1000)+"&hfin="+hfin+"&fl=230&enviar=Enviar";});
+ const t1=Date.now();const u=await findGramet(route,hini,hfin,t0,t1);return {route,hini,hfin,secs:(t1-t0)/1000,u,total:(Date.now()-t0)/1000};}
+</script></body></html>
