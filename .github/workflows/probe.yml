@@ -1,0 +1,18 @@
+name: Prueba GRAMET (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          T=$(date +%s)
+          for R in LEBZ_LPBJ LEBZ LEBZ_LEBZ; do
+            echo "=== $R"
+            curl -sS -m 90 -D h.txt -A "Mozilla/5.0" "https://www.ogimet.com/display_gramet.php?icao=$R&hini=0&tref=$T&hfin=2&fl=230&enviar=Enviar" -o p.html
+            grep -iE "^(HTTP|x-frame|content-security|content-type)" h.txt
+            grep -ioE "<img[^>]*>|error[^<]{0,120}" p.html | head -5
+            wc -c p.html
+          done
+          curl -sS -m 60 -A "Mozilla/5.0" "https://www.ogimet.com/gramet_aero.phtml" | grep -ioE "<(form|input|select|option)[^>]*>" | head -60
