@@ -205,11 +205,16 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 .gbtn{background:none;border:0;padding:2px 0;font:600 .7rem var(--mono);letter-spacing:.06em;color:var(--muted);cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
 .gbtn:hover{color:var(--accent)}
 .gbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.help-card.gcard{width:min(1200px,100%);height:min(920px,100%)}
+.help-card.gcard{width:min(940px,100%)}
 .gcard .help-top h2{font-size:1.15rem}
 .gcard .help-top div{display:flex;align-items:center;gap:14px;font-size:.85rem}
 .gcard a{color:var(--accent)}
-#gramFrame{flex:1;width:100%;border:0;background:#fff}
+#gramFrame{position:absolute;left:-9999px;top:0;width:900px;height:600px;border:0}
+#gramFrame.show{position:static;flex:1;width:100%;height:80vh;background:#fff}
+#gramBox{flex:1;overflow:auto;display:grid;place-items:center;background:#fff;min-height:240px;padding:8px}
+#gramBox[hidden]{display:none}
+#gramImg{display:block;max-width:100%;max-height:calc(100vh - 140px);width:auto;height:auto;object-fit:contain}
+#gramMsg{color:#5b6876;font-size:.9rem;margin:20px}
 .help-card{background:var(--panel);color:var(--ink);border-radius:8px;width:min(880px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
 .help-top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
 .help-top h2{margin:0;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.5rem}
@@ -369,7 +374,8 @@ html{scroll-behavior:smooth}
       <h2 id="gramTitle">GRAMET</h2>
       <div><a id="gramExt" href="https://www.ogimet.com/gramet_aero.phtml" target="_blank" rel="noopener">Abrir en Ogimet ↗</a><button type="button" class="help-x" id="gramClose" aria-label="Cerrar GRAMET">✕</button></div>
     </div>
-    <iframe id="gramFrame" title="GRAMET de Ogimet"></iframe>
+    <div id="gramBox"><p id="gramMsg">Generando GRAMET…</p><img id="gramImg" alt="GRAMET" hidden></div>
+    <iframe id="gramFrame" title="GRAMET de Ogimet" tabindex="-1" aria-hidden="true"></iframe>
   </div>
 </div>
 <div class="help" id="help" hidden>
@@ -988,16 +994,39 @@ $("helpLegend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">
 let helpReturn=null;
 const GFL={LPBJ:230,LERT:350,LEZL:280,LEMO:330,LETO:350,LEGT:350,LESA:350};
 let gramReturn=null;
+// GRAMET-START
+// Ogimet no permite leer su página desde otro sitio, pero sí cargar la imagen. Su nombre es
+// /tmp/gramet_<petición AAAAMMDDhhmmss>_<pasada AAAAMMDDhh>_<ruta>_<inicio AAAAMMDDhh>_<fin AAAAMMDDhh>.png
+// Se pide la página en un iframe oculto y se prueban los nombres posibles alrededor de la hora de la petición.
+function findGramet(route,hini,hfin,t0,t1){
+  const D=t=>new Date(t).toISOString().replace(/[-T:]/g,"");
+  const HR=3600000,base=Math.floor(t0/HR)*HR,st=D(base+hini*HR).slice(0,10),en=D(base+hfin*HR).slice(0,10);
+  const r0=Math.floor((t0-3.5*HR)/(6*HR))*6*HR,runs=[r0,r0-6*HR,r0+6*HR,r0-12*HR].filter(r=>r<=t0).map(r=>D(r).slice(0,10));
+  const secs=[];for(let t=Math.floor(t0/1000)-4;t<=Math.ceil(t1/1000)+3;t++)secs.push(D(t*1000).slice(0,14));
+  const tryList=urls=>new Promise(res=>{let left=urls.length,done=false;urls.forEach(u=>{const i=new Image();i.onload=()=>{if(!done){done=true;res(i.src);}};i.onerror=()=>{if(--left===0&&!done)res(null);};i.src=u+"?r="+Date.now();});});
+  const pass=async()=>{for(const r of runs){const u=await tryList(secs.map(x=>"https://www.ogimet.com/tmp/gramet_"+x+"_"+r+"_"+route+"_"+st+"_"+en+".png"));if(u)return u;}return null;};
+  return (async()=>{for(let k=0;k<5;k++){if(k)await new Promise(r=>setTimeout(r,800));const u=await pass();if(u)return u;}return null;})();
+}
+// GRAMET-END
+let gramSeq=0;
 function openGramet(slot){
-  const id=SLOTS[slot],route=slot?SLOTS[0]+"_"+id:id,fl=GFL[id]||350,now=Date.now();
+  const id=SLOTS[slot],route=slot?SLOTS[0]+"_"+id:id,fl=GFL[id]||350,now=Date.now(),seq=++gramSeq;
   const hini=Math.max(0,Math.floor((win.s-now)/H)),hfin=Math.max(hini,Math.ceil((win.e-now)/H));
   const url="https://www.ogimet.com/display_gramet.php?icao="+route+"&hini="+hini+"&tref="+Math.floor(now/1000)+"&hfin="+hfin+"&fl="+fl+"&enviar=Enviar";
   const z=t=>new Date(t).toISOString().slice(11,16).replace(":","")+"Z";
   $("gramTitle").textContent="GRAMET "+route.replace("_"," → ")+" · FL"+fl+" · "+z(win.s)+"–"+z(win.e);
-  $("gramExt").href=url;$("gramFrame").src=url;
+  $("gramExt").href=url;
+  const fr=$("gramFrame"),img=$("gramImg"),msg=$("gramMsg");
+  fr.classList.remove("show");$("gramBox").hidden=false;img.hidden=true;img.removeAttribute("src");msg.hidden=false;msg.textContent="Generando GRAMET… puede tardar unos segundos.";
+  const fail=()=>{if(seq!==gramSeq)return;$("gramBox").hidden=true;fr.classList.add("show");};
+  const timer=setTimeout(()=>{if(seq===gramSeq&&!img.src){msg.textContent="Ogimet no responde. Prueba con «Abrir en Ogimet ↗».";}},60000);
+  fr.onload=()=>{if(seq!==gramSeq||fr.src==="about:blank")return;
+    findGramet(route,hini,hfin,now,Date.now()).then(u=>{if(seq!==gramSeq)return;clearTimeout(timer);
+      if(u){const m=u.match(/_(\d{8})(\d{2})_/);if(m)$("gramTitle").textContent+=" · GFS "+m[2]+"Z";img.onload=()=>{msg.hidden=true;img.hidden=false;};img.src=u;}else fail();});};
+  fr.src=url;
   gramReturn=document.activeElement;$("gram").hidden=false;document.body.style.overflow="hidden";$("gramClose").focus();
 }
-function closeGramet(){$("gram").hidden=true;$("gramFrame").src="about:blank";document.body.style.overflow="";if(gramReturn)gramReturn.focus();}
+function closeGramet(){gramSeq++;$("gram").hidden=true;$("gramFrame").onload=null;$("gramFrame").src="about:blank";document.body.style.overflow="";if(gramReturn)gramReturn.focus();}
 $("cards").addEventListener("click",e=>{const b=e.target.closest(".gbtn");if(b)openGramet(+b.dataset.slot);});
 $("gramClose").addEventListener("click",closeGramet);
 $("gram").addEventListener("click",e=>{if(e.target===$("gram"))closeGramet();});
@@ -1009,7 +1038,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611081830";
+const BUILD="202611081900";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
