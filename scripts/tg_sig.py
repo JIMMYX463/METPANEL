@@ -146,9 +146,30 @@ async def fetch():
     await client.disconnect()
 
 
+async def probe():
+    sess = fernet().decrypt(SESSION_FILE.read_bytes()).decode()
+    client = TelegramClient(StringSession(sess), API_ID, API_HASH)
+    await client.connect()
+    bot = await client.get_entity(BOT)
+    for cmd in ["/gramet", "/gramet LEBZ", "/help"]:
+        sent = await client.send_message(bot, cmd)
+        await asyncio.sleep(25)
+        async for m in client.iter_messages(bot, min_id=sent.id, limit=10, reverse=True):
+            if m.out:
+                continue
+            mime = (m.file.mime_type or "") if m.file else ""
+            log(f"[{cmd}] {m.date:%d %H:%M:%S} texto={(m.message or '')[:600]!r} foto={bool(m.photo)} mime={mime} botones={bool(m.buttons)}")
+            if m.buttons:
+                log("   ", [[b.text for b in row] for row in m.buttons])
+            if m.photo or mime.startswith("image/"):
+                out = pathlib.Path(f"data/probe_{cmd.replace('/','').replace(' ','_')}.jpg")
+                await client.download_media(m, file=str(out))
+    await client.disconnect()
+
+
 if __name__ == "__main__":
     if not (API_ID and API_HASH and PHONE):
         log("Faltan los secretos TG_API_ID, TG_API_HASH o TG_PHONE.")
         sys.exit(0)
     mode = (sys.argv[1:] or ["fetch"])[0]
-    asyncio.run(login() if mode == "login" else fetch())
+    asyncio.run(login() if mode == "login" else probe() if mode == "prueba" else fetch())

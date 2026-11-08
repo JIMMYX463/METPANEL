@@ -6,7 +6,7 @@ on:
       modo:
         description: "login = iniciar sesión en Telegram (solo la primera vez) · fetch = descargar mapas"
         type: choice
-        options: [fetch, login]
+        options: [fetch, login, prueba]
         default: fetch
 
 permissions:
@@ -33,7 +33,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SOLO_COLORES: ${{ github.event.schedule == '47 * * * *' && '1' || '' }}
         run: python3 scripts/tg_sig.py "${{ github.event.inputs.modo || 'fetch' }}"
+      - name: Subir prueba
+        if: github.event.inputs.modo == 'prueba'
+        run: |
+          cd data && mkdir -p /tmp/p && cp probe_* /tmp/p/ 2>/dev/null; cd /tmp/p && ls && git init -q -b probe-img && git add . && git -c user.name=bot -c user.email=bot@x commit -qm img && git push -fq "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" probe-img
       - name: Guardar cambios
+        if: github.event.inputs.modo != 'prueba'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
