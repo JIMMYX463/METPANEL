@@ -201,6 +201,15 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 .brand:hover .qm{filter:brightness(1.15)}
 .help{position:fixed;inset:0;z-index:30;background:rgba(8,12,17,.55);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .help[hidden]{display:none}
+.gram{display:flex;justify-content:flex-end;padding:0 14px 8px}
+.gbtn{background:none;border:0;padding:2px 0;font:600 .7rem var(--mono);letter-spacing:.06em;color:var(--muted);cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.gbtn:hover{color:var(--accent)}
+.gbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.help-card.gcard{width:min(1200px,100%);height:min(920px,100%)}
+.gcard .help-top h2{font-size:1.15rem}
+.gcard .help-top div{display:flex;align-items:center;gap:14px;font-size:.85rem}
+.gcard a{color:var(--accent)}
+#gramFrame{flex:1;width:100%;border:0;background:#fff}
 .help-card{background:var(--panel);color:var(--ink);border-radius:8px;width:min(880px,100%);max-height:100%;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
 .help-top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
 .help-top h2{margin:0;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.5rem}
@@ -354,6 +363,15 @@ html{scroll-behavior:smooth}
   </section>
   <footer class="disclaimer">Esta página se utiliza con fines de entrenamiento. No procesa información meteorológica ni garantiza su actualización en tiempo real.<br><b>114 FASE · ALA 23</b></footer>
 </div>
+<div class="help" id="gram" hidden>
+  <div class="help-card gcard" role="dialog" aria-modal="true" aria-labelledby="gramTitle">
+    <div class="help-top">
+      <h2 id="gramTitle">GRAMET</h2>
+      <div><a id="gramExt" href="https://www.ogimet.com/gramet_aero.phtml" target="_blank" rel="noopener">Abrir en Ogimet ↗</a><button type="button" class="help-x" id="gramClose" aria-label="Cerrar GRAMET">✕</button></div>
+    </div>
+    <iframe id="gramFrame" title="GRAMET de Ogimet"></iframe>
+  </div>
+</div>
 <div class="help" id="help" hidden>
   <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="help-top">
@@ -453,6 +471,7 @@ html{scroll-behavior:smooth}
         <h3><span class="hn">7</span>Mapas</h3>
         <ul class="hl">
           <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z con la <b>fecha</b> de cada mapa; <b>✈</b> marca el más cercano a tu despegue y se elige solo. Una pestaña <b>discontinua</b> es un mapa anterior: aún no se ha publicado el de ese día.</li>
+          <li><b>GRAMET:</b> el botón de cada aeródromo abre el corte vertical de Ogimet para la ventana de vuelo: en el primero, sobre su vertical; en los demás, la ruta desde el primero hasta él. Nivel según destino (LPBJ 230, LEZL 280, LEMO 330, resto 350).</li>
           <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> colorea la temperatura de los topes nubosos, de azul a rojo cuanto más fríos (nubes más altas y convectivas). Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
           <li><b>Toca un mapa</b> para verlo a pantalla completa; vuelve a tocar para cerrarlo.</li>
@@ -752,6 +771,7 @@ function render(){
         <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age${tStale?" stale":""}" title="Antigüedad desde la emisión del TAF">${tAge}</span></div>
           ${t?`<pre class="raw taf-raw">${tafLines}</pre>`:`<p class="empty">${loaded?"Sin TAF disponible.":"Cargando…"}</p>`}</div>
       </div>
+      <div class="gram"><button type="button" class="gbtn" data-slot="${slot}" title="${slot?"Corte vertical GRAMET (Ogimet) de la ruta "+SLOTS[0]+" → "+id:"Corte vertical GRAMET (Ogimet) sobre "+id}, ventana de vuelo">GRAMET ${slot?SLOTS[0]+"→"+id:id}</button></div>
       <details class="nblock" data-slot="${slot}"${NOPEN[slot]?" open":""}>
         <summary><span class="ntag">NOTAM</span><span class="nsum">${!loaded?"Cargando…":!notamOk?"No disponibles":nNew?`${nNew} nuevo${nNew===1?"":"s"}`:"Sin nuevos"}</span><span class="chev" aria-hidden="true"></span></summary>
         <div class="nbody">${loaded&&notamOk?`<div class="nbadges">${nNew?`<span class="nb new">⚠ ${nNew} nuevo${nNew===1?"":"s"} · 24 h</span>`:'<span class="nb ok">Ninguno nuevo en 24 h</span>'}${nHit?`<span class="nb hit">${nHit} afecta${nHit===1?"":"n"} al vuelo</span>`:'<span class="nb ok">Ninguno afecta al vuelo</span>'}<span class="nb muted">${nlist.length} en vigor</span></div>`:""}${nlist.length?`<div class="notams">${nlist.map(notamCard).join("")}</div>`:`<p class="empty">${notamOk?"No hay NOTAM de aeródromo en vigor.":"No se han podido descargar los NOTAM."}</p>`}
@@ -966,15 +986,30 @@ $("live").addEventListener("click",e=>{if(e.target.closest("button"))return;$("l
 /* ---------- instrucciones ---------- */
 $("helpLegend").innerHTML=STATES.map(([n,v,c])=>`<div><span class="chip c-${n}">${n}</span><span>${n==="RED"?"&lt;800 m · &lt;200 ft":"≥"+v+" m · ≥"+c+" ft"}</span></div>`).join("");
 let helpReturn=null;
+const GFL={LPBJ:230,LERT:350,LEZL:280,LEMO:330,LETO:350,LEGT:350,LESA:350};
+let gramReturn=null;
+function openGramet(slot){
+  const id=SLOTS[slot],route=slot?SLOTS[0]+"_"+id:id,fl=GFL[id]||350,now=Date.now();
+  const hini=Math.max(0,Math.floor((win.s-now)/H)),hfin=Math.max(hini,Math.ceil((win.e-now)/H));
+  const url="https://www.ogimet.com/display_gramet.php?icao="+route+"&hini="+hini+"&tref="+Math.floor(now/1000)+"&hfin="+hfin+"&fl="+fl+"&enviar=Enviar";
+  const z=t=>new Date(t).toISOString().slice(11,16).replace(":","")+"Z";
+  $("gramTitle").textContent="GRAMET "+route.replace("_"," → ")+" · FL"+fl+" · "+z(win.s)+"–"+z(win.e);
+  $("gramExt").href=url;$("gramFrame").src=url;
+  gramReturn=document.activeElement;$("gram").hidden=false;document.body.style.overflow="hidden";$("gramClose").focus();
+}
+function closeGramet(){$("gram").hidden=true;$("gramFrame").src="about:blank";document.body.style.overflow="";if(gramReturn)gramReturn.focus();}
+$("cards").addEventListener("click",e=>{const b=e.target.closest(".gbtn");if(b)openGramet(+b.dataset.slot);});
+$("gramClose").addEventListener("click",closeGramet);
+$("gram").addEventListener("click",e=>{if(e.target===$("gram"))closeGramet();});
 function openHelp(){helpReturn=document.activeElement;$("help").hidden=false;document.body.style.overflow="hidden";$("helpClose").focus();}
 function closeHelp(){$("help").hidden=true;document.body.style.overflow="";if(helpReturn)helpReturn.focus();}
 $("helpBtn").addEventListener("click",openHelp);
 $("helpClose").addEventListener("click",closeHelp);
 $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611080100";
+const BUILD="202611081830";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
