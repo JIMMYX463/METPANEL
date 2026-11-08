@@ -79,7 +79,7 @@ jobs:
           SOLO_COLORES: ${{ steps.toca.outputs.sig != '1' && '1' || '' }}
         run: |
           pip install -q telethon cryptography pillow
-          if [ "${{ steps.toca.outputs.sig }}" = "1" ]; then sudo apt-get install -y -qq tesseract-ocr >/dev/null 2>&1 || true; fi
+          sudo apt-get install -y -qq tesseract-ocr >/dev/null 2>&1 || true
           python3 scripts/tg_sig.py fetch || true
 
       - name: Guardar cambios

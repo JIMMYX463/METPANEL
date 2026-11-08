@@ -13,6 +13,7 @@ from telethon.errors import SessionPasswordNeededError
 
 BOT = "meteolemobot"
 HOURS = ["00", "06", "12", "18"]
+GRAMET_IDS = [x for x in os.environ.get("GRAMET_IDS", "LEBZ,LEMO,LPBJ").split(",") if x]
 SESSION_FILE = pathlib.Path("data/tg.session.enc")
 API_ID = int(os.environ.get("TG_API_ID") or 0)
 API_HASH = os.environ.get("TG_API_HASH", "")
@@ -94,6 +95,28 @@ def chart_date(path):
         log("OCR:", repr(e)[:120]); return None
 
 
+def gramet_span(path, received):
+    """Lee la cabecera del GRAMET ('LEBZ 08/11/2026 de 21 a 06 UTC'). Si el OCR falla, la deduce de la hora de recepción."""
+    rec = dt.datetime.fromtimestamp(received, dt.timezone.utc)
+    try:
+        from PIL import Image
+        im = Image.open(path).convert("L"); W, H = im.size
+        box = (int(W * 0.17), int(H * 0.015), int(W * 0.635), int(H * 0.06))
+        for thr in (110, 90, 140):
+            c = im.crop(box); c = c.resize((c.width * 4, c.height * 4), Image.LANCZOS).point(lambda v, t=thr: 0 if v < t else 255)
+            tmp = "/tmp/gramet_ocr.png"; c.save(tmp)
+            t = subprocess.run(["tesseract", tmp, "stdout", "--psm", "7"], capture_output=True, text=True).stdout
+            m = re.search(r"(\d{2})\D{1,4}(\d{1,2})\s*/\s*(\d{4})\s*de\s*(\d{1,2})\s*a\s*(\d{1,2})", t)
+            if m:
+                d = dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+                if abs((d - rec.date()).days) <= 1:
+                    return {"date": d.isoformat(), "from": int(m.group(4)), "to": int(m.group(5)), "ocr": True}
+    except Exception as e:
+        log("OCR gramet:", repr(e)[:120])
+    start = (rec + dt.timedelta(minutes=59)).replace(minute=0, second=0, microsecond=0)
+    return {"date": start.date().isoformat(), "from": start.hour, "to": (start.hour + 9) % 24, "ocr": False}
+
+
 async def ask(client, bot, cmd):
     """Envía un comando al bot y devuelve el primer mensaje con imagen de la respuesta."""
     sent = await client.send_message(bot, cmd)
@@ -135,6 +158,19 @@ async def fetch():
         meta[hh] = {"file": out.name, "received": int(got.date.timestamp()), "date": date}
         log(f"/sig {hh} ibe: imagen guardada ({out.stat().st_size} bytes) · fecha del mapa {date}")
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1))
+    # GRAMET (HARMONIE, AEMET) sobre la vertical de cada aeródromo, desde la hora actual
+    gpath = pathlib.Path("data/gramet.json")
+    gmeta = json.loads(gpath.read_text()) if gpath.exists() else {}
+    for icao in GRAMET_IDS:
+        got = await ask(client, bot, f"/gramet {icao}")
+        if not got:
+            continue
+        out = pathlib.Path(f"data/gramet_{icao}.jpg")
+        await client.download_media(got, file=str(out))
+        rec = int(got.date.timestamp())
+        gmeta[icao] = {"file": out.name, "received": rec, **gramet_span(out, rec)}
+        log(f"/gramet {icao}: imagen guardada · {gmeta[icao]}")
+    gpath.write_text(json.dumps(gmeta, ensure_ascii=False, indent=1))
     # Mapa de colores OTAN
     got = await ask(client, bot, "/colores")
     if got:
@@ -146,30 +182,9 @@ async def fetch():
     await client.disconnect()
 
 
-async def probe():
-    sess = fernet().decrypt(SESSION_FILE.read_bytes()).decode()
-    client = TelegramClient(StringSession(sess), API_ID, API_HASH)
-    await client.connect()
-    bot = await client.get_entity(BOT)
-    for cmd in ["/gramet", "/gramet LEBZ", "/help"]:
-        sent = await client.send_message(bot, cmd)
-        await asyncio.sleep(25)
-        async for m in client.iter_messages(bot, min_id=sent.id, limit=10, reverse=True):
-            if m.out:
-                continue
-            mime = (m.file.mime_type or "") if m.file else ""
-            log(f"[{cmd}] {m.date:%d %H:%M:%S} texto={(m.message or '')[:600]!r} foto={bool(m.photo)} mime={mime} botones={bool(m.buttons)}")
-            if m.buttons:
-                log("   ", [[b.text for b in row] for row in m.buttons])
-            if m.photo or mime.startswith("image/"):
-                out = pathlib.Path(f"data/probe_{cmd.replace('/','').replace(' ','_')}.jpg")
-                await client.download_media(m, file=str(out))
-    await client.disconnect()
-
-
 if __name__ == "__main__":
     if not (API_ID and API_HASH and PHONE):
         log("Faltan los secretos TG_API_ID, TG_API_HASH o TG_PHONE.")
         sys.exit(0)
     mode = (sys.argv[1:] or ["fetch"])[0]
-    asyncio.run(login() if mode == "login" else probe() if mode == "prueba" else fetch())
+    asyncio.run(login() if mode == "login" else fetch())

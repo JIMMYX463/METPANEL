@@ -477,7 +477,7 @@ html{scroll-behavior:smooth}
         <h3><span class="hn">7</span>Mapas</h3>
         <ul class="hl">
           <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z con la <b>fecha</b> de cada mapa; <b>✈</b> marca el más cercano a tu despegue y se elige solo. Una pestaña <b>discontinua</b> es un mapa anterior: aún no se ha publicado el de ese día.</li>
-          <li><b>GRAMET:</b> el botón de cada aeródromo abre el corte vertical de Ogimet para la ventana de vuelo: en el primero, sobre su vertical; en los demás, la ruta desde el primero hasta él. Nivel según destino (LPBJ 230, LEZL 280, LEMO 330, resto 350).</li>
+          <li><b>GRAMET:</b> el botón de cada aeródromo abre el corte vertical de Ogimet para la ventana de vuelo: en el primero, el GRAMET HARMONIE de AEMET sobre su vertical desde la hora actual (vía Telegram, con día y horas en el título; si no está disponible, el de Ogimet); en los demás, la ruta desde el primero hasta él. Nivel según destino (LPBJ 230, LEZL 280, LEMO 330, resto 350).</li>
           <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> colorea la temperatura de los topes nubosos, de azul a rojo cuanto más fríos (nubes más altas y convectivas). Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
           <li><b>Toca un mapa</b> para verlo a pantalla completa; vuelve a tocar para cerrarlo.</li>
@@ -1009,22 +1009,39 @@ function findGramet(route,hini,hfin,t0,t1){
 }
 // GRAMET-END
 let gramSeq=0;
+// Aeródromo de la izquierda: GRAMET HARMONIE (AEMET) que deja el bot de Telegram en data/gramet.json
+async function openTgGramet(id,seq){
+  let m=null;try{m=JSON.parse(await fetch("data/gramet.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}))[id];}catch(e){}
+  if(seq!==gramSeq)return true;
+  if(!m||!m.file||Date.now()/1000-m.received>3*3600)return false;
+  const p=n=>String(n).padStart(2,"0"),d0=new Date(m.date+"T00:00:00Z"),d1=new Date(d0.getTime()+(m.to<=m.from?86400000:0));
+  const dd=d=>p(d.getUTCDate())+"/"+p(d.getUTCMonth()+1);
+  $("gramTitle").textContent="GRAMET "+id+" · "+dd(d0)+" "+p(m.from)+"Z → "+dd(d1)+" "+p(m.to)+"Z · HARMONIE";
+  $("gramExt").hidden=true;
+  const img=$("gramImg"),msg=$("gramMsg");
+  img.onload=()=>{if(seq!==gramSeq)return;msg.hidden=true;img.hidden=false;};
+  img.onerror=()=>{if(seq===gramSeq)msg.textContent="No se pudo cargar el GRAMET de Telegram.";};
+  img.src="data/"+m.file+"?_="+m.received;
+  return true;
+}
 function openGramet(slot){
   const id=SLOTS[slot],route=slot?SLOTS[0]+"_"+id:id,fl=GFL[id]||350,now=Date.now(),seq=++gramSeq;
   const hini=Math.max(0,Math.floor((win.s-now)/H)),hfin=Math.max(hini,Math.ceil((win.e-now)/H));
   const url="https://www.ogimet.com/display_gramet.php?icao="+route+"&hini="+hini+"&tref="+Math.floor(now/1000)+"&hfin="+hfin+"&fl="+fl+"&enviar=Enviar";
   const z=t=>new Date(t).toISOString().slice(11,16).replace(":","")+"Z";
   $("gramTitle").textContent="GRAMET "+route.replace("_"," → ")+" · FL"+fl+" · "+z(win.s)+"–"+z(win.e);
-  $("gramExt").href=url;
+  $("gramExt").href=url;$("gramExt").hidden=false;
   const fr=$("gramFrame"),img=$("gramImg"),msg=$("gramMsg");
-  fr.classList.remove("show");$("gramBox").hidden=false;img.hidden=true;img.removeAttribute("src");msg.hidden=false;msg.textContent="Generando GRAMET… puede tardar unos segundos.";
+  fr.classList.remove("show");$("gramBox").hidden=false;img.hidden=true;img.onerror=null;img.removeAttribute("src");msg.hidden=false;msg.textContent="Generando GRAMET… puede tardar unos segundos.";
   const fail=()=>{if(seq!==gramSeq)return;$("gramBox").hidden=true;fr.classList.add("show");};
   const timer=setTimeout(()=>{if(seq===gramSeq&&!img.src){msg.textContent="Ogimet no responde. Prueba con «Abrir en Ogimet ↗».";}},60000);
+  gramReturn=document.activeElement;$("gram").hidden=false;document.body.style.overflow="hidden";$("gramClose").focus();
+  const viaOgimet=()=>{
   fr.onload=()=>{if(seq!==gramSeq||fr.src==="about:blank")return;
     findGramet(route,hini,hfin,now,Date.now()).then(u=>{if(seq!==gramSeq)return;clearTimeout(timer);
       if(u){const m=u.match(/_(\d{8})(\d{2})_/);if(m)$("gramTitle").textContent+=" · GFS "+m[2]+"Z";img.onload=()=>{msg.hidden=true;img.hidden=false;};img.src=u;}else fail();});};
-  fr.src=url;
-  gramReturn=document.activeElement;$("gram").hidden=false;document.body.style.overflow="hidden";$("gramClose").focus();
+  fr.src=url;};
+  if(slot===0){img.onerror=null;openTgGramet(id,seq).then(ok=>{if(!ok&&seq===gramSeq)viaOgimet();});}else viaOgimet();
 }
 function closeGramet(){gramSeq++;$("gram").hidden=true;$("gramFrame").onload=null;$("gramFrame").src="about:blank";document.body.style.overflow="";if(gramReturn)gramReturn.focus();}
 $("cards").addEventListener("click",e=>{const b=e.target.closest(".gbtn");if(b)openGramet(+b.dataset.slot);});
@@ -1038,7 +1055,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611081900";
+const BUILD="202611082130";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
