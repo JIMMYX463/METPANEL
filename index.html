@@ -479,7 +479,7 @@ html{scroll-behavior:smooth}
         <h3><span class="hn">7</span>Mapas</h3>
         <ul class="hl">
           <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z con la <b>fecha</b> de cada mapa; <b>✈</b> marca el más cercano a tu despegue y se elige solo. Una pestaña <b>discontinua</b> es un mapa anterior: aún no se ha publicado el de ese día.</li>
-          <li><b>Suelta (solo LEBZ):</b> junto a «METAR» aparece APTO SUELTA (verde) o NO APTO SUELTA (rojo) según el último METAR: visibilidad &gt; 5000 m, techo BKN/OVC/VV ≥ 5000 ft y viento cruzado &lt; 15 kt (contando rachas) en pista 13/31. Pasa el ratón por encima para ver el motivo.</li>
+          <li><b>Suelta (solo LEBZ):</b> junto a «METAR» aparece APTO SUELTA (verde) o NO APTO SUELTA (rojo) según el último METAR: visibilidad &gt; 5000 m, techo BKN/OVC/VV ≥ 5000 ft y viento cruzado en pista 13/31 &lt; 15 kt, con racha cruzada máxima de 20 kt. Pasa el ratón por encima para ver el motivo.</li>
           <li><b>GRAMET:</b> el botón de cada aeródromo abre el corte vertical de Ogimet para la ventana de vuelo: en el primero, el GRAMET HARMONIE de AEMET sobre su vertical desde la hora actual (vía Telegram, con día y horas en el título; si no está disponible, el de Ogimet); en los demás, la ruta desde el primero hasta él. Nivel según destino (LPBJ 230, LEZL 280, LEMO 330, resto 350).</li>
           <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> colorea la temperatura de los topes nubosos, de azul a rojo cuanto más fríos (nubes más altas y convectivas). Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
@@ -1028,7 +1028,7 @@ async function openTgGramet(id,seq){
   return true;
 }
 // Indicador de suelta en LEBZ (mismos criterios que meteo-ffaa): visibilidad > 5000 m,
-// techo BKN/OVC/VV >= 5000 ft y componente lateral < 15 kt en la pista 13/31 (con rachas, si las hay).
+// techo BKN/OVC/VV >= 5000 ft y componente lateral en la pista 13/31 < 15 kt (medio) y <= 20 kt (racha).
 function sueltaLEBZ(rawIn){
   const raw=(rawIn||"").toUpperCase(),c=[];
   if(!raw)return {apto:false,causas:["Sin METAR disponible"]};
@@ -1037,14 +1037,14 @@ function sueltaLEBZ(rawIn){
   const cl=[...raw.matchAll(/\b(BKN|OVC|VV)(\d{3}|\/\/\/)/g)].map(x=>x[2]==="///"?0:+x[2]*100);const t=cl.length?Math.min(...cl):99999;
   if(t<5000)c.push("Techo "+t+" ft");
   const w=raw.match(/\b(\d{3})(\d{2,3})(?:G(\d{2,3}))?KT\b/);
-  if(w){let d=Math.abs(+w[1]-310);if(d>180)d=360-d;const sp=Math.max(+w[2],w[3]?+w[3]:0),x=Math.abs(sp*Math.sin(d*Math.PI/180));if(x>=15)c.push("Componente lateral "+Math.round(x)+" kt"+(w[3]?" (racha)":""));}
+  if(w){let d=Math.abs(+w[1]-310);if(d>180)d=360-d;const k=Math.abs(Math.sin(d*Math.PI/180)),x=+w[2]*k,g=w[3]?+w[3]*k:0;if(x>=15)c.push("Componente lateral "+Math.round(x)+" kt");if(g>20)c.push("Componente lateral en racha "+Math.round(g)+" kt");}
   else if(!raw.includes("VRB"))c.push("Viento no disponible");
   return {apto:!c.length,causas:c};
 }
 function sueltaTag(m){
   if(!m)return "";
   const r=sueltaLEBZ(m.raw.replace(/^(METAR|SPECI)\s+(COR\s+)?LEBZ\s+\d{6}Z\s*/,""));
-  const tip=r.apto?"Apto suelta: visibilidad > 5000 m, techo (BKN/OVC/VV) ≥ 5000 ft y viento cruzado < 15 kt con rachas en pista 13/31":"No apto suelta: "+r.causas.join(" · ");
+  const tip=r.apto?"Apto suelta: visibilidad > 5000 m, techo (BKN/OVC/VV) ≥ 5000 ft y viento cruzado en pista 13/31 < 15 kt (racha ≤ 20 kt)":"No apto suelta: "+r.causas.join(" · ");
   return `<span class="suelta ${r.apto?"ok":"no"}" title="${esc(tip)}">${r.apto?"APTO SUELTA":"NO APTO SUELTA"}</span>`;
 }
 function openGramet(slot){
@@ -1078,7 +1078,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611102115";
+const BUILD="202611102120";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
