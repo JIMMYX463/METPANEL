@@ -119,6 +119,8 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .bar-BLU{border-left-color:var(--blu)!important}.bar-WHT{border-left-color:var(--wht)!important;box-shadow:inset 1px 0 0 var(--line)}.bar-GRN{border-left-color:var(--grn)!important}.bar-YLO{border-left-color:var(--ylo)!important}.bar-AMB{border-left-color:var(--amb)!important}.bar-RED{border-left-color:var(--red)!important}
 .age{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
 .age.stale{color:var(--warn);font-weight:700}
+.suelta{font:700 .68rem var(--mono);letter-spacing:.06em;cursor:help}
+.suelta.ok{color:var(--grn)}.suelta.no{color:var(--red)}
 .empty{color:var(--muted);font-size:.86rem;margin:0}
 .nblock{border-top:2px solid var(--nline);background:var(--nbg)}
 .nblock summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:10px 14px}
@@ -477,6 +479,7 @@ html{scroll-behavior:smooth}
         <h3><span class="hn">7</span>Mapas</h3>
         <ul class="hl">
           <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z con la <b>fecha</b> de cada mapa; <b>✈</b> marca el más cercano a tu despegue y se elige solo. Una pestaña <b>discontinua</b> es un mapa anterior: aún no se ha publicado el de ese día.</li>
+          <li><b>Suelta (solo LEBZ):</b> junto a «METAR» aparece APTO SUELTA (verde) o NO APTO SUELTA (rojo) según el último METAR: visibilidad &gt; 5000 m, techo BKN/OVC ≥ 5000 ft y viento cruzado &lt; 15 kt en pista 13/31. Pasa el ratón por encima para ver el motivo.</li>
           <li><b>GRAMET:</b> el botón de cada aeródromo abre el corte vertical de Ogimet para la ventana de vuelo: en el primero, el GRAMET HARMONIE de AEMET sobre su vertical desde la hora actual (vía Telegram, con día y horas en el título; si no está disponible, el de Ogimet); en los demás, la ruta desde el primero hasta él. Nivel según destino (LPBJ 230, LEZL 280, LEMO 330, resto 350).</li>
           <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> colorea la temperatura de los topes nubosos, de azul a rojo cuanto más fríos (nubes más altas y convectivas). Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
@@ -772,7 +775,7 @@ function render(){
     el.innerHTML=`<div class="ad-head"><div class="ad-id"><label class="sr" for="adsel${slot}">Aeródromo ${slot+1}</label><select class="adsel" id="adsel${slot}" data-slot="${slot}" title="Cambiar aeródromo">${adOptions(id)}</select></div>
       <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc+" · categoría "+m.cat:""}"><small>METAR</small>${m?m.cat:"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst+" · categoría "+wcat+(tafNear?" · el TAF no cubre las próximas 3 h: tramo más cercano":" · peor tramo entre ahora y +3 h"):""}"><small>TAF${tafNear?" ≈":""}</small>${wcat||"—"}</div></div></div>${ops}
       <div class="ad-body">
-        <div class="sec"><div class="sec-h"><span class="label">METAR</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
+        <div class="sec"><div class="sec-h"><span class="label">METAR</span>${id==="LEBZ"?sueltaTag(m):""}<span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
           ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
         <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age${tStale?" stale":""}" title="Antigüedad desde la emisión del TAF">${tAge}</span></div>
           ${t?`<pre class="raw taf-raw">${tafLines}</pre>`:`<p class="empty">${loaded?"Sin TAF disponible.":"Cargando…"}</p>`}</div>
@@ -1024,6 +1027,26 @@ async function openTgGramet(id,seq){
   img.src="data/"+m.file+"?_="+m.received;
   return true;
 }
+// Indicador de suelta en LEBZ (mismos criterios que meteo-ffaa): visibilidad > 5000 m,
+// techo BKN/OVC >= 5000 ft y componente lateral < 15 kt en la pista 13/31 (viento medio).
+function sueltaLEBZ(rawIn){
+  const raw=(rawIn||"").toUpperCase(),c=[];
+  if(!raw)return {apto:false,causas:["Sin METAR disponible"]};
+  const vis=[...raw.matchAll(/\b(\d{4})(?=\s|[A-Z])/g)].map(v=>+v[1]);const v=vis.length?Math.min(...vis):9999;
+  if(v<=5000)c.push("Visibilidad "+v+" m");
+  const cl=[...raw.matchAll(/\b(BKN|OVC)(\d{3})\b/g)].map(x=>+x[2]*100);const t=cl.length?Math.min(...cl):99999;
+  if(t<5000)c.push("Techo "+t+" ft");
+  const w=raw.match(/\b(\d{3})(\d{2,3})(?:G\d{2,3})?KT\b/);
+  if(w){let d=Math.abs(+w[1]-310);if(d>180)d=360-d;const x=Math.abs(+w[2]*Math.sin(d*Math.PI/180));if(x>=15)c.push("Componente lateral "+Math.round(x)+" kt");}
+  else if(!raw.includes("VRB"))c.push("Viento no disponible");
+  return {apto:!c.length,causas:c};
+}
+function sueltaTag(m){
+  if(!m)return "";
+  const r=sueltaLEBZ(m.raw.replace(/^(METAR|SPECI)\s+(COR\s+)?LEBZ\s+\d{6}Z\s*/,""));
+  const tip=r.apto?"Apto suelta: visibilidad > 5000 m, techo ≥ 5000 ft y viento cruzado < 15 kt en pista 13/31":"No apto suelta: "+r.causas.join(" · ");
+  return `<span class="suelta ${r.apto?"ok":"no"}" title="${esc(tip)}">${r.apto?"APTO SUELTA":"NO APTO SUELTA"}</span>`;
+}
 function openGramet(slot){
   const id=SLOTS[slot],route=slot?SLOTS[0]+"_"+id:id,fl=GFL[id]||350,now=Date.now(),seq=++gramSeq;
   const hini=Math.max(0,Math.floor((win.s-now)/H)),hfin=Math.max(hini,Math.ceil((win.e-now)/H));
@@ -1055,7 +1078,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611082130";
+const BUILD="202611102110";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
