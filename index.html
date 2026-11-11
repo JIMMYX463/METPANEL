@@ -334,7 +334,7 @@ html{scroll-behavior:smooth}
         <div id="marks"></div>
         <div class="msg" id="satMsg" hidden></div>
       </div>
-      <div class="row"><button type="button" id="satLayer">Cambiar a infrarrojo + temperatura</button><button type="button" id="satView" aria-pressed="false">Zoom sectores</button><button type="button" id="secBtn" aria-pressed="true" hidden>Sectores ✓</button><span class="note">EUMETSAT · cada 10 min</span></div>
+      <div class="row"><button type="button" id="satLayer">Cambiar a infrarrojo + radar</button><button type="button" id="satView" aria-pressed="false">Zoom sectores</button><button type="button" id="secBtn" aria-pressed="true" hidden>Sectores ✓</button><span class="note">EUMETSAT · cada 10 min</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Mapa de colores OTAN</span><span class="age" id="colAge"></span></div>
@@ -934,7 +934,7 @@ function refreshSat(){
   im.onerror=()=>{i++;if(i<list.length){im.src=satUrl(list[i]);}else{im.style.visibility='hidden';msg.hidden=false;msg.innerHTML='No se ha podido cargar la imagen.<br>Ábrela en EUMETSAT View.';$("satAge").textContent="";}};
   im.src=satUrl(list[0]);
   const c=$("satCoast");c.onerror=()=>{c.hidden=true;};c.src=satUrl("backgrounds:ne_10m_coastline");
-  $("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo + temperatura";
+  $("satLayer").textContent=satMode==="ir"?"Cambiar a visible":"Cambiar a infrarrojo + radar";
 }
 $("satLayer").addEventListener("click",()=>{satMode=satMode==="ir"?"vis":"ir";ls.set("mp-sat",satMode);refreshSat();});
 $("live").addEventListener("click",e=>{if(e.target.closest("button"))return;$("live").classList.toggle("zoom");});
@@ -1025,7 +1025,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611111350";
+const BUILD="202611111355";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
