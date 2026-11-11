@@ -250,19 +250,7 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 .ht td:nth-child(2){color:var(--muted)}.ht td:last-child{font-family:var(--mono)}
 .ht{display:block;overflow-x:auto;max-width:100%}
 @media (max-width:700px){.help{padding:0}.help-card{border-radius:0;height:100%}.hcol{grid-template-columns:repeat(2,minmax(0,1fr))}.hcases{grid-template-columns:1fr}}
-.gate{position:fixed;inset:0;z-index:60;background:var(--bg);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
-.gate[hidden]{display:none}
-.gate-card{width:min(340px,100%);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:24px;display:grid;gap:8px;box-shadow:0 12px 40px rgba(0,0,0,.12)}
-.gate-crest{width:104px;height:auto;justify-self:center;margin-bottom:4px}
-.gate-t{text-align:center;font-family:var(--display);font-stretch:78%;font-weight:800;font-size:1.6rem;line-height:1.1;margin-bottom:10px}
-.gate-t small{display:block;font-family:var(--body);font-stretch:100%;font-size:.66rem;letter-spacing:.12em;color:var(--muted)}
-.gate-card>label{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:4px}
-.gate-card input:not([type=checkbox]){font:600 1rem var(--mono);padding:10px 12px;border:1px solid var(--line);border-radius:5px;background:var(--field);color:var(--ink)}
-.gate-card input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.gate-card>label.gate-rem{display:flex;align-items:center;gap:8px;font-size:.86rem;font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink);margin:6px 0 4px}
-.gate-card button{font:700 .95rem var(--body);padding:11px;border-radius:5px;border:0;background:var(--accent);color:var(--panel);cursor:pointer}
-.gate-card button:disabled{opacity:.6;cursor:wait}
-.gate-err{margin:4px 0 0;color:var(--warn);font-weight:700;font-size:.86rem;text-align:center}
+
 .themebtn{width:32px;height:32px;padding:5px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--ink);cursor:pointer;display:inline-grid;place-items:center}
 .themebtn:hover{background:var(--field)}
 .themebtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -270,7 +258,7 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(
 .themebtn .i-dark path{fill:currentColor}
 .themebtn g{display:none}
 .themebtn[data-mode="system"] .i-sys,.themebtn[data-mode="light"] .i-light,.themebtn[data-mode="dark"] .i-dark{display:inline}
-.logout{font:600 .75rem var(--body);padding:4px 9px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer}
+
 .disclaimer{margin-top:8px;padding-top:14px;border-top:1px solid var(--line);text-align:center;font-size:.72rem;line-height:1.5;color:var(--muted);text-wrap:balance}
 .disclaimer b{letter-spacing:.08em}
 @media (min-width:1600px){body{font-size:16px}}
@@ -305,25 +293,11 @@ html{scroll-behavior:smooth}
 <body>
 <script>try{var t=localStorage.getItem("mp-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 
-<div class="gate" id="gate">
-  <form class="gate-card" id="gateForm" autocomplete="on">
-    <img class="gate-crest logo-l" src="logo-light.png" alt="METPANEL"><img class="gate-crest logo-d" src="logo-dark.png" alt="METPANEL">
-    <div class="gate-t"><small>Meteorología aeronáutica</small>PANEL METEO</div>
-    <label for="gUser">Usuario</label>
-    <input id="gUser" name="username" autocomplete="username" autocapitalize="characters" spellcheck="false" required>
-    <label for="gPass">Contraseña</label>
-    <input id="gPass" name="password" type="password" autocomplete="current-password" required>
-    <label class="gate-rem"><input type="checkbox" id="gRem"> Recordar en este equipo</label>
-    <button type="submit" id="gBtn">Entrar</button>
-    <p class="gate-err" id="gErr" role="alert" hidden>Usuario o contraseña incorrectos.</p>
-  </form>
-</div>
 <div class="top">
   <div class="in top-in">
     <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><img class="crest logo-l" src="logo-light.png" alt="METPANEL"><img class="crest logo-d" src="logo-dark.png" alt="METPANEL"><span class="bt"><small>Meteorología aeronáutica</small>PANEL METEO<span class="qm" aria-hidden="true">?</span></span></button></h1>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
     <div class="actions">
-    <button type="button" class="logout" id="logoutBtn" title="Cerrar sesión">Salir</button>
     <button type="button" class="livebadge" id="liveBadge" title="Pulsa para actualizar todos los datos y mapas"><i></i> Conectando…</button>
     <button type="button" class="themebtn" id="themeBtn" aria-label="Tema: sistema" title="Tema: sistema"><svg viewBox="0 0 24 24" aria-hidden="true"><g class="i-sys"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="fill"/></g><g class="i-light"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g><g class="i-dark"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></g></svg></button>
     </div>
@@ -408,13 +382,13 @@ html{scroll-behavior:smooth}
           <g class="s-cn"><text x="-15" y="31">1</text><text x="-15" y="64">2</text><text x="-15" y="148">3</text><text x="-15" y="200">4</text><text x="-15" y="257">5</text></g>
         </svg>
         <ol class="hl">
-          <li><b>Barra superior:</b> el logotipo abre estas instrucciones; en el centro, la <b>hora UTC</b>; a la derecha, <b>Salir</b>, <b>Actualizado</b> (púlsalo para volver a descargar todo) y el botón de <b>tema</b> (sistema → claro → oscuro).</li>
+          <li><b>Barra superior:</b> el logotipo abre estas instrucciones; en el centro, la <b>hora UTC</b>; a la derecha, <b>Actualizado</b> (púlsalo para volver a descargar todo) y el botón de <b>tema</b> (sistema → claro → oscuro).</li>
           <li><b>Ventana de vuelo:</b> inicio y fin del vuelo en Z; pulsa la barra para desplegarla o plegarla (recuerda tu elección).</li>
           <li><b>Tarjetas de aeródromo:</b> METAR y TAF en bruto con su color OTAN.</li>
           <li><b>NOTAM:</b> plegados; solo dicen cuántos hay nuevos.</li>
           <li><b>Mapas:</b> significativo de baja cota, satélite y colores OTAN.</li>
         </ol>
-        <p class="hp"><b>Acceso:</b> el panel pide usuario y contraseña al entrar; con ellos se descifra el mapa sectorial. Marca <b>Recordar en este equipo</b> para no tener que escribirlos cada vez, y pulsa <b>Salir</b> (arriba a la derecha) para cerrar la sesión en un equipo compartido.</p>
+
       </section>
 
       <section class="hs">
@@ -794,13 +768,13 @@ $("cards").addEventListener("toggle",e=>{const d=e.target;if(d.classList&&d.clas
 $("cards").addEventListener("change",e=>{const sel=e.target.closest("select.adsel");if(!sel)return;SLOTS[+sel.dataset.slot]=sel.value;ls.set("mp-ads",JSON.stringify(SLOTS));render();loadLive().then(d=>{if(d)render();});});
 
 /* ---------- carga de METAR y TAF ----------
-   Orden: 1) AVWX desde el navegador (token cifrado con la clave de acceso)
+   Orden: 1) AVWX desde el navegador
           2) intermediario de Cloudflare
           3) archivos del repositorio que descarga GitHub cada pocos minutos.
    Siempre se queda con el METAR y el TAF más recientes de cada aeródromo. */
 const LIVE_URL="https://metpanel.djgarcia463.workers.dev/";
-const AVWX_ENC={"iv": "N4LdKts0BaF7zSfE", "ct": "sx0znIAfpI39YRQO/Q2L/J/NUTBZ5G+V9BtQ5JYxeTwkFLLaG0S2+Ey04eevzT5ZqqmAVJSJ8N9IJoM="}; // {iv,ct}: token de AVWX cifrado con AES-GCM y la clave de acceso
-let AVWX_TOKEN=null,dataAt=0,DIAG={};
+const AVWX_KEY="29w6eWBmQpt9dWU8uKqX3Qz3GXWsc1DyD8i33xSUTkI"; // token de AVWX (sin cifrar: el panel es público)
+let dataAt=0,DIAG={};
 const diagObs=L=>{const id=SLOTS.find(x=>L&&L[x]&&L[x].metar);return id?id+" "+L[id].metar.time:"sin METAR";};
 function obsFromText(m,t){
   return parseObs(m.split("\n").map(l=>l.trim()&&!/^(METAR|SPECI)/.test(l)?"METAR "+l:l).join("\n")+"\n"+t.replace(/\r/g,"").split(/\n(?=TAF|[A-Z]{4} \d{6}Z)/).map(l=>l.replace(/\s+/g," ").trim()).filter(Boolean).map(l=>/^TAF/.test(l)?l:"TAF "+l).join("\n"));
@@ -814,13 +788,9 @@ function mergeObs(L){
   }
 }
 const withTimeout=(ms,fn)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);return fn(c.signal).finally(()=>clearTimeout(t));};
-async function avwxToken(){
-  if(AVWX_TOKEN||!AVWX_ENC||!KEY)return AVWX_TOKEN;
-  try{AVWX_TOKEN=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(AVWX_ENC.iv)},KEY,b64(AVWX_ENC.ct)));}catch(e){}
-  return AVWX_TOKEN;
-}
+async function avwxToken(){return AVWX_KEY;}
 async function loadAvwx(){
-  const tok=await avwxToken();if(!tok){DIAG.avwx=KEY?"✗ sin token":"— sin iniciar sesión";return false;}
+  const tok=await avwxToken();if(!tok){DIAG.avwx="✗ sin token";return false;}
   const ids=[...new Set(SLOTS)];
   try{
     const res=await withTimeout(8000,sig=>Promise.all(ids.flatMap(id=>["metar","taf"].map(k=>
@@ -864,35 +834,11 @@ async function load(){
   render();
 }
 let refreshing=false;
-/* Al pulsar «Actualizado»: recarga todo lo disponible y, si hay token de GitHub (cifrado con la clave
-   de acceso), pide a GitHub que descargue ya NOTAM y mapas; luego espera a que lleguen. */
-const GH_ENC={"iv": "cI4PSfwwxB4dclVm", "ct": "bX+9B8ivbCIj6MWBN0kVuTuyiQDnaqgUNxNa+LDmand7KAJSJoTFqu542LqDKIgFunFeKXi+9A/e5UMk6wEZrhsy1LW70RPhn8bSMkQmAAvZslcTNgEpsKl/aTk2VeoSyo8dgWs/SlIBSQ3SNg=="};let GH_TOKEN=null,COLM=null;
-async function ghToken(){
-  if(GH_TOKEN||!GH_ENC||!KEY)return GH_TOKEN;
-  try{GH_TOKEN=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(GH_ENC.iv)},KEY,b64(GH_ENC.ct)));}catch(e){}
-  return GH_TOKEN;
-}
-const mapsStamp=()=>Math.max(0,...Object.values(SIGM).map(x=>x.received||0),(COLM&&COLM.received)||0);
-async function triggerMaps(){
-  const tok=await ghToken();if(!tok)return;
-  const before=mapsStamp();
-  try{
-    const r=await fetch("https://api.github.com/repos/JIMMYX463/METPANEL/actions/workflows/actualizar.yml/dispatches",{method:"POST",
-      headers:{"Accept":"application/vnd.github+json","Authorization":"Bearer "+tok,"X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"},
-      body:JSON.stringify({ref:"main",inputs:{forzar:"1"}})});
-    if(r.status!==204)return;
-  }catch(e){return;}
-  const b=$("liveBadge");b.classList.add("busy");b.lastChild.textContent=" Descargando mapas…";
-  for(let i=0;i<16;i++){ // hasta ~5 min
-    await new Promise(r=>setTimeout(r,20000));
-    await Promise.all([loadSig(),loadCol()]);
-    if(mapsStamp()>before)break;
-  }
-  await load();refreshSat();
-}
+/* Al pulsar «Actualizado»: vuelve a descargar todo lo disponible (METAR, TAF, NOTAM, mapas y satélite). */
+let COLM=null;
 async function manualRefresh(){
   if(refreshing)return;refreshing=true;paintBadge("busy");
-  try{await Promise.all([load(),loadSig(),loadCol(),Promise.resolve(refreshSat())]);await triggerMaps();}finally{refreshing=false;}
+  try{await Promise.all([load(),loadSig(),loadCol(),Promise.resolve(refreshSat())]);}finally{refreshing=false;}
 }
 
 /* ---------- mapa significativo (imágenes del bot, guardadas por GitHub Actions) ---------- */
@@ -1078,7 +1024,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611102120";
+const BUILD="202611111345";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
@@ -1092,47 +1038,8 @@ let hiddenAt=0;
 document.addEventListener("visibilitychange",()=>{if(document.hidden)hiddenAt=Date.now();else if(Date.now()-hiddenAt>60000){checkVersion();refreshAll();}});
 window.addEventListener("pageshow",e=>{if(e.persisted){checkVersion();refreshAll();}});
 
-/* ---------- acceso: la clave (usuario + contraseña) descifra el mapa sectorial ---------- */
-const AUTH={"salt": "oHQBQq4Y4vjWNGj2aoL+gQ==", "iter": 250000, "iv": "i5/FBzRvzeto7diP", "ct": "YAnnnkOG3Hr5bNK7r9aBJWuU7UIrX109UOZN"};
-const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-let KEY=null;
-async function deriveKey(u,p){
-  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(u.trim().toUpperCase()+":"+p),"PBKDF2",false,["deriveKey"]);
-  return crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(AUTH.salt),iterations:AUTH.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},true,["decrypt"]);
-}
-async function keyOk(k){try{const t=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(AUTH.iv)},k,b64(AUTH.ct));return new TextDecoder().decode(t)==="METPANEL-OK";}catch(e){return false;}}
-async function unlockSectors(){
-  try{
-    const buf=new Uint8Array(await fetch("data/sectores.enc?_="+BUILD).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}));
-    const png=await crypto.subtle.decrypt({name:"AES-GCM",iv:buf.slice(0,12)},KEY,buf.slice(12));
-    $("secOv").src=URL.createObjectURL(new Blob([png],{type:"image/png"}));
-  }catch(e){}
-}
-function setLocked(locked){
-  $("gate").hidden=!locked;
-  for(const el of document.querySelectorAll(".top,.flight,.wrap"))el.inert=locked;
-  document.body.style.overflow=locked?"hidden":"";
-}
-async function enter(k,remember){
-  KEY=k;setLocked(false);
-  if(remember){try{const raw=await crypto.subtle.exportKey("raw",k);ls.set("mp-key",btoa(String.fromCharCode(...new Uint8Array(raw))));}catch(e){}}
-  unlockSectors();
-  if(AVWX_ENC)load();
-}
-$("gateForm").addEventListener("submit",async e=>{
-  e.preventDefault();$("gErr").hidden=true;$("gBtn").disabled=true;$("gBtn").textContent="Comprobando…";
-  const k=await deriveKey($("gUser").value,$("gPass").value).catch(()=>null);
-  if(k&&await keyOk(k)){$("gPass").value="";await enter(k,$("gRem").checked);}
-  else{$("gErr").hidden=false;$("gPass").select();}
-  $("gBtn").disabled=false;$("gBtn").textContent="Entrar";
-});
-$("logoutBtn").addEventListener("click",()=>{try{localStorage.removeItem("mp-key")}catch(e){}KEY=null;$("secOv").removeAttribute("src");$("secOv").hidden=true;$("secBtn").hidden=true;delete $("secOv").dataset.ok;setLocked(true);$("gUser").focus();});
-(async()=>{
-  setLocked(true);
-  const saved=ls.get("mp-key");
-  if(saved){try{const k=await crypto.subtle.importKey("raw",b64(saved),{name:"AES-GCM"},true,["decrypt"]);if(await keyOk(k)){await enter(k,false);return;}}catch(e){}}
-  $("gUser").focus();
-})();
+/* ---------- mapa sectorial (superpuesto en el satélite) ---------- */
+$("secOv").src="data/sectores.png?_="+BUILD;
 
 /* ---------- tema: sistema → claro → oscuro ---------- */
 const THEMES=["system","light","dark"],TLABEL={system:"sistema",light:"claro",dark:"oscuro"};
