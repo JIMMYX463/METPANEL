@@ -1,6 +1,6 @@
 name: Actualizar datos
 
-# Se lanza desde fuera cada 10 min (cron-job.org → workflow_dispatch).
+# Se lanza desde fuera cada 5 min (cron-job.org → workflow_dispatch).
 # El cron de GitHub queda solo como respaldo, porque GitHub lo retrasa mucho.
 on:
   workflow_dispatch:
@@ -59,7 +59,7 @@ jobs:
           f = os.environ.get("FORZAR") == "1"
           print("notam=" + ("1" if f or age("data/notam.json", "fetched") > 25*60 else "0"))
           print("colores=" + ("1" if f or age("data/colores.json", "received") > 9*60 else "0"))
-          print("sig=" + ("1" if f or age("data/sig.json", None) > 25*60 else "0"))
+          print("sig=" + ("1" if f or age("data/sig.json", None) > 9*60 else "0"))
           PY
           cat "$GITHUB_OUTPUT"
 

@@ -464,13 +464,14 @@ html{scroll-behavior:smooth}
       <section class="hs">
         <h3><span class="hn">8</span>Actualización de los datos</h3>
         <table class="ht"><thead><tr><th>Dato</th><th>Fuente</th><th>Se actualiza</th></tr></thead><tbody>
-          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>al entrar, recargar o pulsar «Actualizado» · y cada 2 min en GitHub</td></tr>
-          <tr><td>NOTAM</td><td>FAA</td><td>cada 30 min</td></tr>
-          <tr><td>Colores OTAN</td><td>AEMET · @meteolemobot</td><td>cada 30 min</td></tr>
-          <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>cada hora</td></tr>
+          <tr><td>METAR y TAF</td><td>aviationweather.gov</td><td>al entrar, recargar o pulsar «Actualizado» · y cada 5 min en GitHub</td></tr>
+          <tr><td>NOTAM</td><td>FAA</td><td>cada 25-30 min</td></tr>
+          <tr><td>Colores OTAN</td><td>AEMET · @meteolemobot</td><td>cada 10 min</td></tr>
+          <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>cada 10 min</td></tr>
+          <tr><td>GRAMET (izquierda)</td><td>AEMET · @meteolemobot</td><td>cada 10 min</td></tr>
           <tr><td>Satélite</td><td>EUMETSAT (directo)</td><td>cada 10 min</td></tr>
         </tbody></table>
-        <p class="note">Un aviso externo (cron-job.org) lanza la descarga cada 2 min. Si ese aviso falla, GitHub la hace por su cuenta aproximadamente cada hora. Fíjate en la antigüedad que aparece junto a cada METAR y cada mapa.</p>
+        <p class="note">Un aviso externo (cron-job.org) lanza la descarga cada 5 min. Si ese aviso falla, GitHub la hace por su cuenta aproximadamente cada hora. Fíjate en la antigüedad que aparece junto a cada METAR y cada mapa.</p>
         <ul class="hl">
           <li><span class="livebadge ok"><i></i> Actualizado · 17:09Z</span>: hora de la última descarga de METAR y TAF. <b>Púlsalo</b> para volver a descargar todo al momento: METAR, TAF, NOTAM, satélite y mapas. En rojo, no se han podido cargar.</li>
           <li>Un METAR con más de 90 min aparece en <b style="color:var(--warn)">rojo · desactualizado</b>.</li>
@@ -1024,7 +1025,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611111345";
+const BUILD="202611111350";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
