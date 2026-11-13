@@ -119,8 +119,6 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .bar-BLU{border-left-color:var(--blu)!important}.bar-WHT{border-left-color:var(--wht)!important;box-shadow:inset 1px 0 0 var(--line)}.bar-GRN{border-left-color:var(--grn)!important}.bar-YLO{border-left-color:var(--ylo)!important}.bar-AMB{border-left-color:var(--amb)!important}.bar-RED{border-left-color:var(--red)!important}
 .age{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
 .age.stale{color:var(--warn);font-weight:700}
-.suelta{font:700 .68rem var(--mono);letter-spacing:.06em;cursor:help}
-.suelta.ok{color:var(--grn)}.suelta.no{color:var(--red)}
 .empty{color:var(--muted);font-size:.86rem;margin:0}
 .nblock{border-top:2px solid var(--nline);background:var(--nbg)}
 .nblock summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:10px 14px}
@@ -295,7 +293,7 @@ html{scroll-behavior:smooth}
 
 <div class="top">
   <div class="in top-in">
-    <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><img class="crest logo-l" src="logo-light.png" alt="METPANEL"><img class="crest logo-d" src="logo-dark.png" alt="METPANEL"><span class="bt"><small>Meteorología aeronáutica</small>PANEL METEO<span class="qm" aria-hidden="true">?</span></span></button></h1>
+    <h1><button type="button" class="brand" id="helpBtn" aria-haspopup="dialog" title="Instrucciones"><img class="crest logo-l" id="logoL" src="logo-light.png" alt="METPANEL"><img class="crest logo-d" id="logoD" src="logo-dark.png" alt="METPANEL"><span class="bt"><small>Meteorología aeronáutica</small>PANEL METEO<span class="qm" aria-hidden="true">?</span></span></button></h1>
     <div class="clock"><b id="utc">--:--:-- Z</b><span id="loc">Local --</span></div>
     <div class="actions">
     <button type="button" class="livebadge" id="liveBadge" title="Pulsa para actualizar todos los datos y mapas"><i></i> Conectando…</button>
@@ -453,7 +451,7 @@ html{scroll-behavior:smooth}
         <h3><span class="hn">7</span>Mapas</h3>
         <ul class="hl">
           <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z con la <b>fecha</b> de cada mapa; <b>✈</b> marca el más cercano a tu despegue y se elige solo. Una pestaña <b>discontinua</b> es un mapa anterior: aún no se ha publicado el de ese día.</li>
-          <li><b>Suelta (solo LEBZ):</b> junto a «METAR» aparece APTO SUELTA (verde) o NO APTO SUELTA (rojo) según el último METAR: visibilidad &gt; 5000 m, techo BKN/OVC/VV ≥ 5000 ft y viento cruzado en pista 13/31 &lt; 15 kt, con racha cruzada máxima de 20 kt. Pasa el ratón por encima para ver el motivo.</li>
+          <li><b>Suelta (LEBZ):</b> el logotipo de arriba a la izquierda se pone <b>verde</b> si LEBZ está apto suelta y <b>rojo</b> si no, según el último METAR: visibilidad &gt; 5000 m, techo BKN/OVC/VV ≥ 5000 ft y viento cruzado en pista 13/31 &lt; 15 kt, con racha cruzada máxima de 20 kt. Pasa el ratón por el logotipo para ver el motivo.</li>
           <li><b>GRAMET:</b> el botón de cada aeródromo abre el corte vertical de Ogimet para la ventana de vuelo: en el primero, el GRAMET HARMONIE de AEMET sobre su vertical desde la hora actual (vía Telegram, con día y horas en el título; si no está disponible, el de Ogimet); en los demás, la ruta desde el primero hasta él. Nivel según destino (LPBJ 230, LEZL 280, LEMO 330, resto 350).</li>
           <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> colorea la temperatura de los topes nubosos, de azul a rojo cuanto más fríos (nubes más altas y convectivas). Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
@@ -716,6 +714,7 @@ function notamCard(n){
 }
 let OBS={},NOT={},loaded=false,notamOk=false;const NOPEN={};
 function render(){
+  updateSuelta();
   const cards=$("cards");if(!win.s)return;cards.innerHTML="";
   const now=Date.now();
   // PROB IMC dentro de la ventana: PROB40 se marca siempre; PROB30 solo si los 3 aeródromos lo tienen
@@ -750,7 +749,7 @@ function render(){
     el.innerHTML=`<div class="ad-head"><div class="ad-id"><label class="sr" for="adsel${slot}">Aeródromo ${slot+1}</label><select class="adsel" id="adsel${slot}" data-slot="${slot}" title="Cambiar aeródromo">${adOptions(id)}</select></div>
       <div class="ccs"><div class="cc ${m?"c-"+m.cc:""}" title="${m?"Color OTAN: "+m.cc+" · categoría "+m.cat:""}"><small>METAR</small>${m?m.cat:"—"}</div><div class="cc ${worst?"c-"+worst:""}" title="${worst?"Color OTAN: "+worst+" · categoría "+wcat+(tafNear?" · el TAF no cubre las próximas 3 h: tramo más cercano":" · peor tramo entre ahora y +3 h"):""}"><small>TAF${tafNear?" ≈":""}</small>${wcat||"—"}</div></div></div>${ops}
       <div class="ad-body">
-        <div class="sec"><div class="sec-h"><span class="label">METAR</span>${id==="LEBZ"?sueltaTag(m):""}<span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
+        <div class="sec"><div class="sec-h"><span class="label">METAR</span><span class="age ${stale?"stale":""}">${age}${stale?" · desactualizado":""}</span></div>
           ${m?`<pre class="raw bar bar-${m.cc}">${esc(m.raw)}</pre>`:`<p class="empty">${loaded?"Sin METAR disponible.":"Cargando…"}</p>`}</div>
         <div class="sec"><div class="sec-h"><span class="label">TAF</span><span class="age${tStale?" stale":""}" title="Antigüedad desde la emisión del TAF">${tAge}</span></div>
           ${t?`<pre class="raw taf-raw">${tafLines}</pre>`:`<p class="empty">${loaded?"Sin TAF disponible.":"Cargando…"}</p>`}</div>
@@ -988,11 +987,14 @@ function sueltaLEBZ(rawIn){
   else if(!raw.includes("VRB"))c.push("Viento no disponible");
   return {apto:!c.length,causas:c};
 }
-function sueltaTag(m){
-  if(!m)return "";
-  const r=sueltaLEBZ(m.raw.replace(/^(METAR|SPECI)\s+(COR\s+)?LEBZ\s+\d{6}Z\s*/,""));
-  const tip=r.apto?"Apto suelta: visibilidad > 5000 m, techo (BKN/OVC/VV) ≥ 5000 ft y viento cruzado en pista 13/31 < 15 kt (racha ≤ 20 kt)":"No apto suelta: "+r.causas.join(" · ");
-  return `<span class="suelta ${r.apto?"ok":"no"}" title="${esc(tip)}">${r.apto?"APTO SUELTA":"NO APTO SUELTA"}</span>`;
+// Logo: verde si LEBZ está apto suelta, rojo (original) si no o si no hay METAR de LEBZ
+function updateSuelta(){
+  const m=(OBS.LEBZ||{}).metar;
+  const r=m?sueltaLEBZ(m.raw.replace(/^(METAR|SPECI)\s+(COR\s+)?LEBZ\s+\d{6}Z\s*/,"")):{apto:false,causas:["Sin METAR de LEBZ"]};
+  const sfx=r.apto?"-ok":"";
+  if(!$("logoL").src.endsWith("logo-light"+sfx+".png"))$("logoL").src="logo-light"+sfx+".png";
+  if(!$("logoD").src.endsWith("logo-dark"+sfx+".png"))$("logoD").src="logo-dark"+sfx+".png";
+  $("helpBtn").title="Instrucciones · LEBZ "+(r.apto?"APTO SUELTA":"NO APTO SUELTA: "+r.causas.join(" · "));
 }
 function openGramet(slot){
   const id=SLOTS[slot],route=slot?SLOTS[0]+"_"+id:id,fl=GFL[id]||350,now=Date.now(),seq=++gramSeq;
@@ -1025,7 +1027,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611111355";
+const BUILD="202611131155";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
