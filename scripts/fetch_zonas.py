@@ -1,13 +1,12 @@
 """Zonas D, P, R y TSA/TRA de España peninsular activas por NOTAM o por AIP, con su polígono (ENAIRE).
 - NOTAM: servicio NOTAM de Insignia (capa «Áreas», con la geometría ya calculada).
 - AIP: espacio aéreo en vigor (capa D_P_R), zonas activas H24, HJ o con horario en observaciones.
-Escribe data/zonas.json."""
+Escribe data/zonas_notam.json y data/zonas_aip.json (este casi nunca cambia)."""
 import json, re, time, pathlib, urllib.parse, urllib.request
 
 UA = {"User-Agent": "METPANEL (github.com/JIMMYX463/METPANEL)"}
 NOTAM = "https://servais.enaire.es/insignias/rest/services/NOTAM/NOTAM_APP_V3/FeatureServer/1/query"
 AIP = "https://servais.enaire.es/insignias/rest/services/INSIGNIA_VIGOR/Aero_APP_VIGOR_Airspace_V_6/MapServer/{}/query"
-OUT = pathlib.Path("data/zonas.json")
 
 
 def get(url, **p):
@@ -27,7 +26,7 @@ def peninsula(rings):
 
 def kind_notam(q, el, text):
     el = (el or "").upper(); t = (text or "").upper()
-    if el.startswith("LETS") or el.startswith("LETR") or re.search(r"\bTSA\b|\bTRA\b|SEGREGATED", t):
+    if el.startswith("LETS") or el.startswith("LETR") or re.search(r"\bTSA\b|\bTRA\b", t):
         return "TSA"
     if q == "RDCA" or el.startswith("LED"):
         return "D"
@@ -82,23 +81,25 @@ def aip():
     return out
 
 
+def save(path, zs):
+    path = pathlib.Path(path)
+    old = json.loads(path.read_text()) if path.exists() else {}
+    if old.get("zonas") == zs:
+        print(path.name, "sin cambios (%d)" % len(zs)); return
+    path.write_text(json.dumps({"fetched": int(time.time()), "source": "ENAIRE", "zonas": zs}, ensure_ascii=False, separators=(",", ":")))
+    import collections
+    print(path.name, len(zs), dict(collections.Counter(z["t"] for z in zs)), "· %d KB" % (path.stat().st_size // 1024))
+
+
 def main():
     now = time.time() * 1000
-    zs = []
-    for fn in (notams, aip):
+    for name, fn in (("data/zonas_notam.json", lambda: notams(now)), ("data/zonas_aip.json", aip)):
         try:
-            zs += fn(now) if fn is notams else fn()
+            zs = fn()
         except Exception as e:
-            print(fn.__name__, "falló:", repr(e)[:200])
-    if not zs:
-        print("Sin datos de ENAIRE."); return
-    zs.sort(key=lambda z: (z["t"], z["src"], z["id"], z.get("from", 0)))
-    old = json.loads(OUT.read_text()) if OUT.exists() else {}
-    if old.get("zonas") == zs:
-        print("Sin cambios (%d zonas)." % len(zs)); return
-    OUT.write_text(json.dumps({"fetched": int(time.time()), "source": "ENAIRE", "zonas": zs}, ensure_ascii=False, separators=(",", ":")))
-    import collections
-    print("Zonas guardadas:", len(zs), dict(collections.Counter((z["t"], z["src"]) for z in zs)), "· %d KB" % (OUT.stat().st_size // 1024))
+            print(name, "falló:", repr(e)[:200]); continue
+        zs.sort(key=lambda z: (z["t"], z["id"], z.get("from", 0)))
+        save(name, zs)
 
 
 if __name__ == "__main__":
