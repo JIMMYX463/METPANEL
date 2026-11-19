@@ -12,12 +12,14 @@ jobs:
           const {chromium}=require('playwright');
           (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1400,height:1000}});const p=await ctx.newPage();
           const log=pg=>{pg.on('request',r=>{if(r.method()==='POST')console.log('REQ',r.url().slice(-60),(r.postData()||'').slice(0,700).replace(/\n/g,' '))});
-            pg.on('response',async r=>{if(r.request().method()==='POST'){try{const t=await r.text();console.log('RESP',r.url().slice(-40),t.length,t.slice(0,1500).replace(/\n/g,' '))}catch(e){}}});};
+            pg.on('response',async r=>{if(r.request().method()==='POST'&&/eaup|Eaup|EAUP/i.test(r.url())){try{const t=await r.text();console.log('RESP',r.url().slice(-40),t.length,t.slice(0,4000).replace(/\n/g,' '))}catch(e){}}});};
           log(p);ctx.on('page',pg=>{console.log('POPUP');log(pg);});
           await p.goto('https://www.public.nm.eurocontrol.int/PUBPORTAL/gateway/spec/index.html',{waitUntil:'networkidle',timeout:90000});
           await p.waitForTimeout(6000);
           console.log('=====CLICK');
-          const [pop]=await Promise.all([ctx.waitForEvent('page',{timeout:30000}).catch(()=>null),p.click('text=/19\\/11\\/2026 16:30|\\d\\d\\/\\d\\d\\/\\d{4} \\d\\d:\\d\\d/ >> nth=0')]);
+          const h=await p.evaluateHandle(()=>{const xs=[...document.querySelectorAll('a,div,span,td')].filter(e=>/^\d\d\/\d\d\/\d{4} \d\d:\d\d$/.test(e.innerText.trim())&&e.children.length===0&&/E?UUP|E?AUP/.test((e.closest('tr')||{}).innerText||''));return xs[0];});
+          console.log('TARGET',await h.evaluate(e=>e&&e.closest('tr').innerText));
+          const [pop]=await Promise.all([ctx.waitForEvent('page',{timeout:30000}).catch(()=>null),h.asElement().click()]);
           const q=pop||p;await q.waitForTimeout(15000);await q.screenshot({path:'shots/aup.png',fullPage:true});
           console.log('URL',q.url());console.log('TEXT2',(await q.innerText('body')).replace(/\s+/g,' ').slice(0,6000));
           await b.close();})();
