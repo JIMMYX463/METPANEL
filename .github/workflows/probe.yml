@@ -1,16 +1,24 @@
 name: Prueba (temporal)
 on: workflow_dispatch
 permissions:
-  contents: read
+  contents: write
 jobs:
   probe:
     runs-on: ubuntu-24.04
     steps:
       - run: |
-          B=https://www.public.nm.eurocontrol.int/PUBPORTAL/gateway/spec/
-          curl -sS -m 60 -A "Mozilla/5.0" -D h.txt "$B/index.html" -o i.html; head -5 h.txt; wc -c i.html; cat i.html | head -c 3000; echo
-          for js in $(grep -oE '(src|href)="[^"]+\.(js|json)[^"]*"' i.html | cut -d'"' -f2 | head -20); do
-            u="$B$js"; case "$js" in http*) u="$js";; /*) u="https://www.public.nm.eurocontrol.int$js";; esac
-            echo "=== $u"; curl -sS -m 60 -A "Mozilla/5.0" "$u" -o f.js; wc -c f.js
-            grep -oE '"[^"]*(/gateway|rest/|PUBPORTAL|aup|AUP|eaup|EAUP|airspace|Airspace|query|service)[^"]{0,120}"' f.js | sort -u | head -60
-          done
+          npm init -y >/dev/null && npm i playwright@1.56.1 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1; mkdir shots
+          cat > t.js <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1400,height:1000}});
+          p.on('request',r=>{if(!/\.(png|gif|css|js|jpg)(\?|$)/.test(r.url()))console.log('REQ',r.method(),r.url().slice(0,200),(r.postData()||'').slice(0,300).replace(/\n/g,' '))});
+          p.on('response',async r=>{const u=r.url();if(/rpc|gwtRPC|\.do|json|aup|AUP/i.test(u)&&!/\.(js|css)$/.test(u)){try{const t=await r.text();console.log('RESP',u.slice(0,150),t.slice(0,600).replace(/\n/g,' '))}catch(e){}}});
+          await p.goto('https://www.public.nm.eurocontrol.int/PUBPORTAL/gateway/spec/index.html',{waitUntil:'networkidle',timeout:90000});
+          await p.waitForTimeout(8000);await p.screenshot({path:'shots/home.png',fullPage:true});
+          console.log('TEXT',(await p.innerText('body')).replace(/\s+/g,' ').slice(0,3000));
+          const links=await p.$$eval('a,div[role=button],td',xs=>xs.map(x=>x.innerText.trim()).filter(t=>/AUP|UUP|Airspace|RSA|CDR/i.test(t)).slice(0,40));console.log('LINKS',JSON.stringify(links));
+          for(const t of ['eAUP','EAUP','AUP/UUP','AUP']){const el=await p.$(`text=${t}`);if(el){console.log('CLICK',t);await el.click();await p.waitForTimeout(10000);await p.screenshot({path:'shots/aup.png',fullPage:true});console.log('TEXT2',(await p.innerText('body')).replace(/\s+/g,' ').slice(0,4000));break;}}
+          await b.close();})();
+          JS
+          node t.js
+          cd shots && git init -q -b probe-img && git add . && git -c user.name=bot -c user.email=bot@x commit -qm img && git push -fq "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" probe-img
