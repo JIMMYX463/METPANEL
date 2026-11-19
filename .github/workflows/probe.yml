@@ -7,6 +7,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - run: |
-          for f in insignia/rest/services/NOTAM_SRV insignia/rest/services/AIS insignia/rest/services/INSIGNIA_SRV insignias/rest/services/NOTAM insignias/rest/services/INSIGNIA_VIGOR insignias/rest/services/AIP insignias/rest/services/INSIGNIA_AIRAC insignias/rest/services/INSIGNIA_VFR; do
-            echo "=== $f"; curl -sS -m 60 "https://servais.enaire.es/$f?f=json" | python3 -c "import sys,json;d=json.load(sys.stdin);print([s['name']+':'+s['type'] for s in d.get('services',[])])"
+          B=https://servais.enaire.es/insignias/rest/services
+          for f in NOTAM/NOTAM_APP_V3/FeatureServer INSIGNIA_VIGOR/Aero_APP_VIGOR_Airspace_V_6/MapServer; do
+            echo "=== $f"; curl -sS -m 60 "$B/$f/layers?f=json" | python3 -c "
+          import sys,json;d=json.load(sys.stdin)
+          for l in d.get('layers',[]): print(l['id'],l['name'],l.get('geometryType'),'|',', '.join(x['name'] for x in (l.get('fields') or [])[:40]))"
           done
+          echo "=== muestra NOTAM capa 0..3"
+          for L in 0 1 2 3; do curl -sS -m 60 "$B/NOTAM/NOTAM_APP_V3/FeatureServer/$L/query?where=1%3D1&outFields=*&returnGeometry=false&resultRecordCount=3&f=json" | head -c 2500; echo; done
