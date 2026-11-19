@@ -1,22 +1,22 @@
 {
  "00": {
   "file": "sig_00.jpg",
-  "received": 1795090737,
-  "date": null
+  "received": 1795090835,
+  "date": "2026-11-19"
  },
  "06": {
   "file": "sig_06.jpg",
-  "received": 1795090742,
-  "date": null
+  "received": 1795090841,
+  "date": "2026-11-19"
  },
  "12": {
   "file": "sig_12.jpg",
-  "received": 1795090748,
-  "date": null
+  "received": 1795090847,
+  "date": "2026-11-19"
  },
  "18": {
   "file": "sig_18.jpg",
-  "received": 1795090754,
-  "date": null
+  "received": 1795090855,
+  "date": "2026-11-19"
  }
 }
