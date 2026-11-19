@@ -1,0 +1,12 @@
+name: Prueba (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          curl -sS -m 60 "https://api.open-meteo.com/v1/elevation?latitude=39.3581,39.273,39.1911,38.9191,38.8598,38.6915,38.6484,38.5453,38.3274,38.3499,38.0971,39.0974&longitude=-6.0976,-6.4331,-6.7436,-6.3359,-5.6253,-7.0246,-5.3476,-6.0594,-6.5301,-5.721,-6.1954,-6.0297"; echo
+          echo ===; curl -sS -m 60 "https://servais.enaire.es/insignia/rest/services?f=pjson" | head -c 3000; echo
+          echo ===; curl -sS -m 60 "https://servais.enaire.es/insignias/rest/services?f=pjson" | head -c 3000; echo
