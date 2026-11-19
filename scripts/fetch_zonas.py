@@ -26,12 +26,14 @@ def peninsula(rings):
 
 def kind_notam(q, el, text):
     el = (el or "").upper(); t = (text or "").upper()
-    if el.startswith("LETS") or el.startswith("LETR") or re.search(r"\bTSA\b|\bTRA\b", t):
-        return "TSA"
-    if q == "RDCA" or el.startswith("LED"):
+    if el.startswith("LED") or q == "RDCA":
         return "D"
-    if el.startswith("LEP"):
+    if el.startswith("LER"):
+        return "R"
+    if el.startswith("LEP") or q == "RPCA":
         return "P"
+    if el.startswith("LETS") or el.startswith("LETR") or re.match(r"\s*(TSA|TRA)\b", t):
+        return "TSA"
     return "R"
 
 
@@ -48,7 +50,9 @@ def notams(now):
             continue
         el = (a.get("affectedElement") or "").strip()
         ident = el if not el.startswith("DINV") else ""
+        m = re.search(r"SACTA\)\s*(.+?)\s+AREA\)", a.get("icaoFormatText") or "")
         out.append({"t": kind_notam(a.get("qcode"), el, a.get("itemE")), "src": "NOTAM", "id": ident or "Temporal",
+                    "name": (m.group(1).strip().title() if m else ""),
                     "notam": a.get("notamId"), "from": b, "to": c, "sched": (a.get("itemD") or "").strip(),
                     "lower": (a.get("itemF") or "").strip(), "upper": (a.get("itemG") or "").strip(),
                     "text": (a.get("icaoFormatText") or a.get("itemE") or "").strip(), "rings": rings})
