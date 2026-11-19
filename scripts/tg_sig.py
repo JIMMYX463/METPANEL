@@ -13,6 +13,8 @@ from telethon.errors import SessionPasswordNeededError
 
 BOT = "meteolemobot"
 HOURS = ["00", "06", "12", "18"]
+DELTA = os.environ.get("DELTA_ZONA", "86")
+DELTA_PTS = os.environ.get("DELTA_PUNTOS", "ADFHJK")  # puntos que se usan (el más cercano al centro de cada sector)
 GRAMET_IDS = [x for x in os.environ.get("GRAMET_IDS", "LEBZ,LEMO").split(",") if x]
 SESSION_FILE = pathlib.Path("data/tg.session.enc")
 API_ID = int(os.environ.get("TG_API_ID") or 0)
@@ -117,6 +119,38 @@ def gramet_span(path, received):
     return {"date": start.date().isoformat(), "from": start.hour, "to": (start.hour + 9) % 24, "ocr": False}
 
 
+def point_name(path):
+    """Lee el nombre del punto en la cabecera del GRAMET (p. ej. 'L86A'). Devuelve la letra o None."""
+    try:
+        from PIL import Image
+        im = Image.open(path).convert("L"); W, H = im.size
+        box = (int(W * 0.19), int(H * 0.026), int(W * 0.285), int(H * 0.058))
+        for thr in (140, 110, 170):
+            c = im.crop(box); c = c.resize((c.width * 5, c.height * 5), Image.LANCZOS).point(lambda v, t=thr: 0 if v < t else 255)
+            tmp = "/tmp/delta_ocr.png"; c.save(tmp)
+            t = subprocess.run(["tesseract", tmp, "stdout", "--psm", "7"], capture_output=True, text=True).stdout.upper()
+            m = re.search(r"[L1I]\s*%s\s*([A-L])" % DELTA[-2:], t.replace("O", "0"))
+            if m:
+                return m.group(1)
+    except Exception as e:
+        log("OCR punto:", repr(e)[:120])
+    return None
+
+
+async def ask_all(client, bot, cmd, expect):
+    """Envía un comando y devuelve todas las imágenes de la respuesta (espera hasta tener 'expect')."""
+    sent = await client.send_message(bot, cmd)
+    got = []
+    for _ in range(30):
+        await asyncio.sleep(2)
+        got = [m async for m in client.iter_messages(bot, min_id=sent.id, limit=40, reverse=True)
+               if not m.out and (m.photo or ((m.file.mime_type or "") if m.file else "").startswith("image/"))]
+        if len(got) >= expect:
+            await asyncio.sleep(2)
+            break
+    return got
+
+
 async def ask(client, bot, cmd):
     """Envía un comando al bot y devuelve el primer mensaje con imagen de la respuesta."""
     sent = await client.send_message(bot, cmd)
@@ -171,6 +205,26 @@ async def fetch():
         gmeta[icao] = {"file": out.name, "received": rec, **gramet_span(out, rec)}
         log(f"/gramet {icao}: imagen guardada · {gmeta[icao]}")
     gpath.write_text(json.dumps(gmeta, ensure_ascii=False, indent=1))
+    # GRAMET de los puntos de la zona delta (sectores): una vez por hora
+    if os.environ.get("DELTA") == "1":
+        msgs = await ask_all(client, bot, f"/delta {DELTA}", 13)
+        if len(msgs) >= 2:
+            dmeta = {"zona": DELTA, "received": int(msgs[0].date.timestamp()), "points": {}}
+            from PIL import Image
+            for k, m in enumerate(msgs[1:13]):
+                tmp = pathlib.Path(f"/tmp/delta_{k}.jpg")
+                await client.download_media(m, file=str(tmp))
+                letter = point_name(tmp) or "ABCDEFGHIJKL"[k]
+                if letter not in DELTA_PTS:
+                    continue
+                out = pathlib.Path(f"data/delta{DELTA}_{letter}.jpg")
+                Image.open(tmp).convert("RGB").save(out, "JPEG", quality=72, optimize=True)
+                rec = int(m.date.timestamp())
+                dmeta["points"][letter] = {"file": out.name, "received": rec, **gramet_span(out, rec)}
+            pathlib.Path("data/delta.json").write_text(json.dumps(dmeta, ensure_ascii=False, indent=1))
+            log(f"/delta {DELTA}: {len(msgs)} imágenes · guardados {sorted(dmeta['points'])}")
+        else:
+            log(f"/delta {DELTA}: sin respuesta")
     # Mapa de colores OTAN
     got = await ask(client, bot, "/colores")
     if got:
@@ -182,34 +236,9 @@ async def fetch():
     await client.disconnect()
 
 
-async def probe():
-    sess = fernet().decrypt(SESSION_FILE.read_bytes()).decode()
-    client = TelegramClient(StringSession(sess), API_ID, API_HASH)
-    await client.connect()
-    bot = await client.get_entity(BOT)
-    cmds = [c for c in os.environ.get("PROBE_CMDS", "/delta 86").split("|") if c]
-    pathlib.Path("probe").mkdir(exist_ok=True)
-    for cmd in cmds:
-        sent = await client.send_message(bot, cmd)
-        await asyncio.sleep(40)
-        k = 0
-        async for m in client.iter_messages(bot, min_id=sent.id, limit=60, reverse=True):
-            if m.out:
-                continue
-            k += 1
-            mime = (m.file.mime_type or "") if m.file else ""
-            log(f"[{cmd}] #{k} {m.date:%d %H:%M:%S} texto={(m.message or '')[:700]!r} foto={bool(m.photo)} mime={mime} nombre={getattr(m.file,'name',None) if m.file else None}")
-            if m.buttons:
-                log("   botones", [[b.text for b in row] for row in m.buttons])
-            if m.photo or m.file:
-                out = pathlib.Path(f"probe/{cmd.strip('/').replace(' ','_')}_{k:02d}")
-                await client.download_media(m, file=str(out))
-    await client.disconnect()
-
-
 if __name__ == "__main__":
     if not (API_ID and API_HASH and PHONE):
         log("Faltan los secretos TG_API_ID, TG_API_HASH o TG_PHONE.")
         sys.exit(0)
     mode = (sys.argv[1:] or ["fetch"])[0]
-    asyncio.run(login() if mode == "login" else probe() if mode == "prueba" else fetch())
+    asyncio.run(login() if mode == "login" else fetch())

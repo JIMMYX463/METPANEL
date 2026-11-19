@@ -60,6 +60,7 @@ jobs:
           print("notam=" + ("1" if f or age("data/notam.json", "fetched") > 25*60 else "0"))
           print("colores=" + ("1" if f or age("data/colores.json", "received") > 9*60 else "0"))
           print("sig=" + ("1" if f or age("data/sig.json", None) > 9*60 else "0"))
+          print("delta=" + ("1" if f or age("data/delta.json", "received") > 50*60 else "0"))
           PY
           cat "$GITHUB_OUTPUT"
 
@@ -69,14 +70,18 @@ jobs:
           pip install -q curl_cffi
           python3 scripts/fetch_notam.py || true
 
+      - name: Zonas D activas (ENAIRE)
+        run: python3 scripts/fetch_dareas.py || true
+
       - name: Mapas del bot (colores OTAN y significativo)
-        if: steps.toca.outputs.colores == '1' || steps.toca.outputs.sig == '1'
+        if: steps.toca.outputs.colores == '1' || steps.toca.outputs.sig == '1' || steps.toca.outputs.delta == '1'
         env:
           TG_API_ID: ${{ secrets.TG_API_ID }}
           TG_API_HASH: ${{ secrets.TG_API_HASH }}
           TG_PHONE: ${{ secrets.TG_PHONE }}
           TG_2FA: ${{ secrets.TG_2FA }}
           SOLO_COLORES: ${{ steps.toca.outputs.sig != '1' && '1' || '' }}
+          DELTA: ${{ steps.toca.outputs.delta }}
         run: |
           pip install -q telethon cryptography pillow
           sudo apt-get install -y -qq tesseract-ocr >/dev/null 2>&1 || true
