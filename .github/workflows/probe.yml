@@ -10,14 +10,16 @@ jobs:
           npm init -y >/dev/null && npm i playwright@1.56.1 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1; mkdir shots
           cat > t.js <<'JS'
           const {chromium}=require('playwright');
-          (async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1400,height:1000}});
-          p.on('request',r=>{if(!/\.(png|gif|css|js|jpg)(\?|$)/.test(r.url()))console.log('REQ',r.method(),r.url().slice(0,200),(r.postData()||'').slice(0,300).replace(/\n/g,' '))});
-          p.on('response',async r=>{const u=r.url();if(/rpc|gwtRPC|\.do|json|aup|AUP/i.test(u)&&!/\.(js|css)$/.test(u)){try{const t=await r.text();console.log('RESP',u.slice(0,150),t.slice(0,600).replace(/\n/g,' '))}catch(e){}}});
+          (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1400,height:1000}});const p=await ctx.newPage();
+          const log=pg=>{pg.on('request',r=>{if(r.method()==='POST')console.log('REQ',r.url().slice(-60),(r.postData()||'').slice(0,700).replace(/\n/g,' '))});
+            pg.on('response',async r=>{if(r.request().method()==='POST'){try{const t=await r.text();console.log('RESP',r.url().slice(-40),t.length,t.slice(0,1500).replace(/\n/g,' '))}catch(e){}}});};
+          log(p);ctx.on('page',pg=>{console.log('POPUP');log(pg);});
           await p.goto('https://www.public.nm.eurocontrol.int/PUBPORTAL/gateway/spec/index.html',{waitUntil:'networkidle',timeout:90000});
-          await p.waitForTimeout(8000);await p.screenshot({path:'shots/home.png',fullPage:true});
-          console.log('TEXT',(await p.innerText('body')).replace(/\s+/g,' ').slice(0,3000));
-          const links=await p.$$eval('a,div[role=button],td',xs=>xs.map(x=>x.innerText.trim()).filter(t=>/AUP|UUP|Airspace|RSA|CDR/i.test(t)).slice(0,40));console.log('LINKS',JSON.stringify(links));
-          for(const t of ['eAUP','EAUP','AUP/UUP','AUP']){const el=await p.$(`text=${t}`);if(el){console.log('CLICK',t);await el.click();await p.waitForTimeout(10000);await p.screenshot({path:'shots/aup.png',fullPage:true});console.log('TEXT2',(await p.innerText('body')).replace(/\s+/g,' ').slice(0,4000));break;}}
+          await p.waitForTimeout(6000);
+          console.log('=====CLICK');
+          const [pop]=await Promise.all([ctx.waitForEvent('page',{timeout:30000}).catch(()=>null),p.click('text=/19\\/11\\/2026 16:30|\\d\\d\\/\\d\\d\\/\\d{4} \\d\\d:\\d\\d/ >> nth=0')]);
+          const q=pop||p;await q.waitForTimeout(15000);await q.screenshot({path:'shots/aup.png',fullPage:true});
+          console.log('URL',q.url());console.log('TEXT2',(await q.innerText('body')).replace(/\s+/g,' ').slice(0,6000));
           await b.close();})();
           JS
           node t.js
