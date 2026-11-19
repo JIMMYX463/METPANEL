@@ -15,6 +15,8 @@
 <meta name="application-name" content="METPANEL">
 <meta name="theme-color" content="#0d1319">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=JetBrains+Mono:wght@400;600;800&display=swap">
 <style>
 /* Layout: barra superior (reloj, estado, resumen) + barra de ventana de vuelo + tres columnas por aeródromo + satélite y leyenda. Tablet: tarjetas a ancho completo. Móvil: una columna. */
@@ -150,6 +152,36 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .bottom{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
 .bottom .sec-h{flex-wrap:nowrap;min-height:1.4em}.bottom .sec-h .age{white-space:nowrap}
 .sigtabs{display:flex;gap:6px;flex-wrap:wrap}
+/* módulos con mapa (sectores · GRAMET y zonas D) */
+.ops{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;margin-top:14px}
+.ops .sec-h{flex-wrap:nowrap;min-height:1.4em}.ops .sec-h .age{white-space:nowrap}
+.lmap{height:440px;border-radius:4px;border:1px solid var(--line);background:var(--field);z-index:0}
+.lmap .leaflet-control-attribution{font-size:.6rem}
+.lmap .leaflet-container{font-family:var(--body)}
+.secov-l{position:absolute;max-width:none!important;pointer-events:none;transform-origin:50% 50%;opacity:.9}
+#dMap .secov-l{filter:grayscale(1) contrast(1.4);opacity:.55}
+.secpin{width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2px solid #fff;background:var(--accent);color:#fff;font:800 .95rem var(--mono);display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.45);cursor:pointer;padding:0}
+.secpin:hover,.secpin:focus-visible{background:var(--ink);outline:none}
+.secpin.off{background:var(--off);cursor:default}
+.dlab{background:none;border:0;box-shadow:none;padding:0;font:800 .66rem var(--mono);color:var(--ink);text-shadow:0 0 3px var(--panel),0 0 3px var(--panel),0 0 3px var(--panel);text-align:center;line-height:1.15;white-space:nowrap}
+.dlab::before{display:none}
+.dlab small{display:block;font-weight:600;font-size:.6rem;color:var(--muted)}
+.lmap.far .dlab small{display:none}
+.lmap.vfar .dlab{display:none}
+.dlist{display:grid;gap:4px;max-height:260px;overflow:auto}
+.drow{display:grid;grid-template-columns:auto 6.5em minmax(0,1fr);gap:4px 10px;align-items:baseline;text-align:left;background:var(--field);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:0 4px 4px 0;padding:6px 9px;font:inherit;color:var(--ink);cursor:pointer}
+.drow.next{border-left-color:var(--amb)}
+.drow:hover,.drow:focus-visible{background:var(--hl);outline:none}
+.drow b{font-family:var(--mono);font-size:.8rem}
+.drow .lv{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.drow .hr{grid-column:2/-1;font-family:var(--mono);font-size:.72rem;overflow-wrap:anywhere}
+.drow .st{grid-column:1/2;font-size:.66rem;font-weight:800;letter-spacing:.04em;color:var(--red)}
+.drow.next .st{color:var(--amb)}
+.dleg{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--muted);align-items:center}
+.dleg i{display:inline-block;width:12px;height:10px;border:2px solid var(--red);background:color-mix(in srgb,var(--red) 18%,transparent);vertical-align:-1px;margin-right:4px}
+.dleg i.nx{border:2px dashed var(--amb);background:transparent}
+.ntm-list{display:grid;gap:10px;overflow:auto;padding:2px}
+@media (max-width:900px){.ops{grid-template-columns:1fr}.lmap{height:360px}}
 .sigtabs button[aria-selected="true"]{background:var(--accent);color:var(--panel)}
 .sigtabs button.near::after{content:" ✈";}
 .sigtabs button small{display:block;font:600 .62rem var(--mono);opacity:.8}
@@ -340,7 +372,26 @@ html{scroll-behavior:smooth}
       <div class="row"><span class="note">AEMET · vía @meteolemobot · toca para ampliar</span></div>
     </div>
   </section>
+  <section class="ops" aria-label="Mapas operativos">
+    <div class="box" style="display:grid;gap:10px">
+      <div class="sec-h"><span class="label">Sectores · GRAMET</span><span class="age" id="deltaAge"></span></div>
+      <div class="lmap" id="secMap" role="region" aria-label="Mapa de sectores: pulsa el número de un sector para ver su GRAMET"></div>
+      <div class="row"><span class="note">Pulsa el número de un sector para ver el GRAMET HARMONIE del punto más cercano a su centro · AEMET vía @meteolemobot</span></div>
+    </div>
+    <div class="box" style="display:grid;gap:10px">
+      <div class="sec-h"><span class="label">Zonas D activas · NOTAM</span><span class="age" id="dAge"></span></div>
+      <div class="lmap" id="dMap" role="region" aria-label="Mapa de zonas D activadas por NOTAM"></div>
+      <div class="row"><button type="button" id="dPen">Península</button><button type="button" id="dBz">Badajoz</button><span class="dleg"><span><i></i>en vigor</span><span><i class="nx"></i>próximas 48 h</span></span></div>
+      <div class="dlist" id="dList" aria-label="Zonas D"></div>
+    </div>
+  </section>
   <footer class="disclaimer">Esta página se utiliza con fines de entrenamiento. No procesa información meteorológica ni garantiza su actualización en tiempo real.<br><b>114 FASE · ALA 23</b></footer>
+</div>
+<div class="help" id="ntm" hidden>
+  <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="ntmTitle">
+    <div class="help-top"><h2 id="ntmTitle">NOTAM</h2><button type="button" class="help-x" id="ntmClose" aria-label="Cerrar NOTAM">✕</button></div>
+    <div class="help-body ntm-list" id="ntmBody"></div>
+  </div>
 </div>
 <div class="help" id="gram" hidden>
   <div class="help-card gcard" role="dialog" aria-modal="true" aria-labelledby="gramTitle">
@@ -453,6 +504,8 @@ html{scroll-behavior:smooth}
           <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z con la <b>fecha</b> de cada mapa; <b>✈</b> marca el más cercano a tu despegue y se elige solo. Una pestaña <b>discontinua</b> es un mapa anterior: aún no se ha publicado el de ese día.</li>
           <li><b>Suelta (LEBZ):</b> el logotipo de arriba a la izquierda se pone <b>verde</b> si LEBZ está apto suelta y <b>rojo</b> si no, según el último METAR: visibilidad &gt; 5000 m, techo BKN/OVC/VV ≥ 5000 ft y viento cruzado en pista 13/31 &lt; 15 kt, con racha cruzada máxima de 20 kt. Pasa el ratón por el logotipo para ver el motivo.</li>
           <li><b>GRAMET:</b> el botón de cada aeródromo abre el corte vertical de Ogimet para la ventana de vuelo: en el primero, el GRAMET HARMONIE de AEMET sobre su vertical desde la hora actual (vía Telegram, con día y horas en el título; si no está disponible, el de Ogimet); en los demás, la ruta desde el primero hasta él. Nivel según destino (LPBJ 230, LEZL 280, LEMO 330, resto 350).</li>
+          <li><b>Sectores · GRAMET:</b> mapa con los sectores; pulsa el número de un sector para ver el GRAMET HARMONIE (AEMET, vía @meteolemobot con <code>/delta 86</code>) del punto de la zona delta más cercano a su centro. Se renueva cada hora y empieza en la hora actual; el título indica día y horas.</li>
+          <li><b>Zonas D activas:</b> zonas peligrosas (LED) de la Península activadas por NOTAM, según ENAIRE. En rojo las que tienen un NOTAM en vigor y en naranja discontinuo las que empiezan en las próximas 48 h (dentro de la validez, mira el horario). Cada zona muestra alturas; pulsa la zona o su fila para ver el NOTAM completo. «Badajoz» acerca el mapa a los sectores. Solo España: las zonas de Portugal no están incluidas.</li>
           <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> colorea la temperatura de los topes nubosos, de azul a rojo cuanto más fríos (nubes más altas y convectivas). Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
           <li><b>Toca un mapa</b> para verlo a pantalla completa; vuelve a tocar para cerrarlo.</li>
@@ -467,6 +520,8 @@ html{scroll-behavior:smooth}
           <tr><td>Colores OTAN</td><td>AEMET · @meteolemobot</td><td>cada 10 min</td></tr>
           <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>cada 10 min</td></tr>
           <tr><td>GRAMET (izquierda)</td><td>AEMET · @meteolemobot</td><td>cada 10 min</td></tr>
+          <tr><td>GRAMET sectores</td><td>AEMET · @meteolemobot</td><td>cada hora</td></tr>
+          <tr><td>Zonas D</td><td>ENAIRE (NOTAM)</td><td>cada 5 min</td></tr>
           <tr><td>Satélite</td><td>EUMETSAT (directo)</td><td>cada 10 min</td></tr>
         </tbody></table>
         <p class="note">Un aviso externo (cron-job.org) lanza la descarga cada 5 min. Si ese aviso falla, GitHub la hace por su cuenta aproximadamente cada hora. Fíjate en la antigüedad que aparece junto a cada METAR y cada mapa.</p>
@@ -838,7 +893,7 @@ let refreshing=false;
 let COLM=null;
 async function manualRefresh(){
   if(refreshing)return;refreshing=true;paintBadge("busy");
-  try{await Promise.all([load(),loadSig(),loadCol(),Promise.resolve(refreshSat())]);}finally{refreshing=false;}
+  try{await Promise.all([load(),loadSig(),loadCol(),loadDelta(),loadDareas(),Promise.resolve(refreshSat())]);}finally{refreshing=false;}
 }
 
 /* ---------- mapa significativo (imágenes del bot, guardadas por GitHub Actions) ---------- */
@@ -958,14 +1013,18 @@ function findGramet(route,hini,hfin,t0,t1){
 }
 // GRAMET-END
 let gramSeq=0;
+// «19/11 15Z → 20/11 00Z» a partir de la cabecera leída del GRAMET (fecha, hora inicial y final)
+function gramSpan(m){
+  const p=n=>String(n).padStart(2,"0"),d0=new Date(m.date+"T00:00:00Z"),to=m.to%24;
+  const d1=new Date(d0.getTime()+(m.to>=24||to<=m.from?86400000:0)),dd=d=>p(d.getUTCDate())+"/"+p(d.getUTCMonth()+1);
+  return dd(d0)+" "+p(m.from)+"Z → "+dd(d1)+" "+p(to)+"Z";
+}
 // Aeródromo de la izquierda: GRAMET HARMONIE (AEMET) que deja el bot de Telegram en data/gramet.json
 async function openTgGramet(id,seq){
   let m=null;try{m=JSON.parse(await fetch("data/gramet.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}))[id];}catch(e){}
   if(seq!==gramSeq)return true;
   if(!m||!m.file||Date.now()/1000-m.received>3*3600)return false;
-  const p=n=>String(n).padStart(2,"0"),d0=new Date(m.date+"T00:00:00Z"),d1=new Date(d0.getTime()+(m.to<=m.from?86400000:0));
-  const dd=d=>p(d.getUTCDate())+"/"+p(d.getUTCMonth()+1);
-  $("gramTitle").textContent="GRAMET "+id+" · "+dd(d0)+" "+p(m.from)+"Z → "+dd(d1)+" "+p(m.to)+"Z · HARMONIE";
+  $("gramTitle").textContent="GRAMET "+id+" · "+gramSpan(m)+" · HARMONIE";
   $("gramExt").hidden=true;
   const img=$("gramImg"),msg=$("gramMsg");
   img.onload=()=>{if(seq!==gramSeq)return;msg.hidden=true;img.hidden=false;};
@@ -1027,7 +1086,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611131155";
+const BUILD="202611191530";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
@@ -1035,11 +1094,113 @@ async function checkVersion(){
     if(m&&m[1]!==BUILD){const u=new URL(location.href);if(u.searchParams.get("v")!==m[1]){u.searchParams.set("v",m[1]);location.replace(u.toString());}}
   }catch(e){}
 }
-function refreshAll(){load();refreshSat();loadSig();loadCol();}
+function refreshAll(){load();refreshSat();loadSig();loadCol();loadDelta();loadDareas();}
 $("liveBadge").addEventListener("click",manualRefresh);
 let hiddenAt=0;
 document.addEventListener("visibilitychange",()=>{if(document.hidden)hiddenAt=Date.now();else if(Date.now()-hiddenAt>60000){checkVersion();refreshAll();}});
 window.addEventListener("pageshow",e=>{if(e.persisted){checkVersion();refreshAll();}});
+
+
+/* ---------- mapas operativos (Leaflet): sectores · GRAMET y zonas D activas ---------- */
+// Centro de cada sector (centroide del polígono del mapa sectorial) y punto de /delta 86 más cercano.
+const SECTORS=[{n:1,lat:39.4524,lon:-5.6123,pt:"A"},{n:2,lat:39.0855,lon:-5.4926,pt:"D"},{n:3,lat:38.3226,lon:-6.0371,pt:"H"},
+  {n:4,lat:38.1542,lon:-6.5465,pt:"K"},{n:5,lat:38.4896,lon:-7.0684,pt:"J"},{n:6,lat:39.1525,lon:-6.8184,pt:"F"}];
+const PEN_BOUNDS=[[35.9,-9.6],[43.9,3.4]],BZ_BOUNDS=[[37.45,-8.7],[40.25,-4.2]];
+let DELTA=null,DAREAS=null,secMap=null,dMap=null,dLayer=null;
+const darkNow=()=>document.documentElement.dataset.theme==="dark"||(!document.documentElement.dataset.theme&&matchMedia("(prefers-color-scheme: dark)").matches);
+// Mapa base gris de Esri (sin clave): fondo + capa de nombres, claro u oscuro según el tema
+const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/";
+const tileUrl=k=>ESRI+(darkNow()?"World_Dark_Gray_":"World_Light_Gray_")+k+"/MapServer/tile/{z}/{y}/{x}";
+const TILE_ATTR='Mapa base &copy; Esri, HERE, Garmin, &copy; colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const SecLayer=()=>{const Lyr=L.Layer.extend({
+  onAdd(map){this._img=L.DomUtil.create("img","secov-l");this._img.alt="";this._img.src="data/sectores.png?_="+BUILD;map.getPanes().overlayPane.appendChild(this._img);map.on("zoomend viewreset resize",this._up,this);this._up();},
+  onRemove(map){this._img.remove();map.off("zoomend viewreset resize",this._up,this);},
+  _up(){const m=this._map,a=m.latLngToLayerPoint([SECT.n,SECT.w]),b=m.latLngToLayerPoint([SECT.s,SECT.e]);
+    Object.assign(this._img.style,{left:a.x+"px",top:a.y+"px",width:(b.x-a.x)+"px",height:(b.y-a.y)+"px",transform:`rotate(${-SECT.rot}deg)`});}
+});return new Lyr();};
+function baseMap(el,bounds){
+  const m=L.map(el,{zoomAnimation:false,scrollWheelZoom:false,minZoom:5,maxZoom:12,attributionControl:true});
+  m._mpTiles=L.tileLayer(tileUrl("Base"),{attribution:TILE_ATTR,maxNativeZoom:16,maxZoom:19}).addTo(m);
+  m._mpRef=L.tileLayer(tileUrl("Reference"),{maxNativeZoom:16,maxZoom:19,pane:"shadowPane"}).addTo(m);
+  m.fitBounds(bounds);SecLayer().addTo(m);
+  m.on("focus",()=>m.scrollWheelZoom.enable());m.on("blur",()=>m.scrollWheelZoom.disable());
+  return m;
+}
+function initOpsMaps(){
+  if(!window.L){setTimeout(initOpsMaps,300);return;}
+  if(secMap)return;
+  secMap=baseMap("secMap",[[37.5,-8.0],[40.0,-4.5]]);
+  SECTORS.forEach(sc=>{
+    const ic=L.divIcon({className:"",html:`<button type="button" class="secpin" aria-label="GRAMET del sector ${sc.n}">${sc.n}</button>`,iconSize:[0,0]});
+    L.marker([sc.lat,sc.lon],{icon:ic,keyboard:false,title:"Sector "+sc.n+" · GRAMET"}).addTo(secMap).on("click",()=>openSector(sc));
+  });
+  dMap=baseMap("dMap",PEN_BOUNDS);
+  const z=()=>{const c=dMap.getContainer(),k=dMap.getZoom();c.classList.toggle("far",k<8);c.classList.toggle("vfar",k<7);};dMap.on("zoomend",z);z();
+  $("dPen").onclick=()=>dMap.fitBounds(PEN_BOUNDS);$("dBz").onclick=()=>dMap.fitBounds(BZ_BOUNDS);
+  new MutationObserver(retile).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change",retile);
+  drawDareas();
+}
+function retile(){[secMap,dMap].forEach(m=>{if(m){m._mpTiles.setUrl(tileUrl("Base"));m._mpRef.setUrl(tileUrl("Reference"));}});}
+async function loadDelta(){
+  try{DELTA=JSON.parse(await fetch("data/delta.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));}catch(e){DELTA=null;}
+  const a=$("deltaAge");
+  if(!DELTA||!DELTA.received){a.textContent="sin datos";return;}
+  const any=Object.values(DELTA.points||{})[0];
+  a.textContent=(any?gramSpan(any)+" · ":"")+"recibido "+hhmm(DELTA.received*1000);
+  a.classList.toggle("stale",Date.now()/1000-DELTA.received>3*3600);
+}
+const hhmm=t=>new Date(t).toISOString().slice(11,16).replace(":","")+"Z";
+function openSector(sc){
+  const m=DELTA&&DELTA.points&&DELTA.points[sc.pt];
+  if(!m){showGramImg("GRAMET sector "+sc.n,"",`Todavía no hay GRAMET del sector ${sc.n}.`);return;}
+  showGramImg("GRAMET sector "+sc.n+" · punto L"+DELTA.zona+sc.pt+" · "+gramSpan(m)+" · HARMONIE","data/"+m.file+"?_="+m.received);
+}
+function showGramImg(title,src,err){
+  gramSeq++;const fr=$("gramFrame"),img=$("gramImg"),msg=$("gramMsg");
+  fr.onload=null;fr.classList.remove("show");$("gramBox").hidden=false;$("gramExt").hidden=true;$("gramTitle").textContent=title;
+  img.hidden=true;img.onerror=null;img.removeAttribute("src");msg.hidden=false;msg.textContent=err||"Cargando GRAMET…";
+  if(src){img.onload=()=>{msg.hidden=true;img.hidden=false;};img.onerror=()=>{msg.textContent="No se pudo cargar el GRAMET.";};img.src=src;}
+  gramReturn=document.activeElement;$("gram").hidden=false;document.body.style.overflow="hidden";$("gramClose").focus();
+}
+/* Zonas D: una por indicativo (si hay varios NOTAM, manda el que está en vigor; si no, el próximo) */
+const dtz=t=>{const d=new Date(t),p=n=>String(n).padStart(2,"0");return p(d.getUTCDate())+"/"+p(d.getUTCMonth()+1)+" "+p(d.getUTCHours())+p(d.getUTCMinutes())+"Z";};
+const lv=x=>x.replace(/\s+/g," ").replace(/^0+(\d)/,"$1").replace(/\b0+(\d+FT)/,"$1");
+function zones(){
+  const now=Date.now(),by={};
+  (DAREAS&&DAREAS.areas||[]).forEach(a=>{const on=a.from<=now&&(!a.to||a.to>=now);(by[a.id]=by[a.id]||[]).push({...a,on});});
+  return Object.entries(by).map(([id,list])=>{list.sort((x,y)=>(y.on-x.on)||(x.from-y.from));return {id,list,main:list[0],on:list.some(x=>x.on)};})
+    .sort((a,b)=>(b.on-a.on)||dist(a.main)-dist(b.main));
+}
+function dist(a){const r=a.rings[0],c=r.reduce((s,p)=>[s[0]+p[0]/r.length,s[1]+p[1]/r.length],[0,0]);return Math.hypot(c[0]-38.89,(c[1]+6.82)*.78);}
+async function loadDareas(){
+  try{DAREAS=JSON.parse(await fetch("data/dareas.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));}catch(e){DAREAS=null;}
+  drawDareas();
+}
+function drawDareas(){
+  const Z=zones(),a=$("dAge");
+  a.textContent=DAREAS?`${Z.filter(z=>z.on).length} en vigor · ${Z.filter(z=>!z.on).length} próximas · ENAIRE ${hhmm(DAREAS.fetched*1000)}`:"sin datos";
+  $("dList").innerHTML=Z.length?Z.map((z,i)=>`<button type="button" class="drow ${z.on?"":"next"}" data-i="${i}"><b>${esc(z.id)}</b><span class="lv">${esc(lv(z.main.lower))}–${esc(lv(z.main.upper))}</span><span class="hr">${esc(z.main.sched||"H24")}</span><span class="st">${z.on?"EN VIGOR":"DESDE "+dtz(z.main.from)}</span><span class="hr" style="color:var(--muted)">hasta ${dtz(z.main.to)}${z.list.length>1?" · "+z.list.length+" NOTAM":""}</span></button>`).join(""):`<p class="note">No hay zonas D activadas por NOTAM.</p>`;
+  $("dList").querySelectorAll(".drow").forEach(b=>b.onclick=()=>{const z=Z[+b.dataset.i];openNotam(z);if(dMap&&z._ly)dMap.fitBounds(z._ly.getBounds(),{maxZoom:9,padding:[30,30]});});
+  if(!dMap)return;
+  if(dLayer)dLayer.remove();dLayer=L.layerGroup().addTo(dMap);
+  const red=getComputedStyle(document.documentElement).getPropertyValue("--red").trim()||"#d0312d",amb=getComputedStyle(document.documentElement).getPropertyValue("--amb").trim()||"#ee8a12";
+  Z.slice().reverse().forEach(z=>{
+    const ly=L.polygon(z.main.rings,z.on?{color:red,weight:2,fillColor:red,fillOpacity:.16}:{color:amb,weight:2,dashArray:"5 5",fillColor:amb,fillOpacity:.05}).addTo(dLayer);
+    ly.bindTooltip(`${esc(z.id)}<small>${esc(lv(z.main.lower))}–${esc(lv(z.main.upper))}</small>`,{permanent:true,direction:"center",className:"dlab",interactive:false});
+    ly.on("click",()=>openNotam(z));z._ly=ly;
+  });
+}
+let ntmReturn=null;
+function openNotam(z){
+  $("ntmTitle").textContent=z.id+" · "+(z.on?"en vigor":"próxima");
+  $("ntmBody").innerHTML=z.list.map(n=>`<div class="notam"><div class="notam-h"><b>${esc(n.notam||"")}</b><span>${dtz(n.from)} → ${dtz(n.to)}</span><span>${esc(lv(n.lower))}–${esc(lv(n.upper))}</span>${n.on?'<span class="tag aff">EN VIGOR</span>':""}</div><div class="notam-h"><span>Horario: ${esc(n.sched||"H24")}</span></div><p>${esc(n.text)}</p></div>`).join("");
+  ntmReturn=document.activeElement;$("ntm").hidden=false;document.body.style.overflow="hidden";$("ntmClose").focus();
+}
+function closeNotam(){$("ntm").hidden=true;document.body.style.overflow="";if(ntmReturn)ntmReturn.focus();}
+$("ntmClose").addEventListener("click",closeNotam);
+$("ntm").addEventListener("click",e=>{if(e.target===$("ntm"))closeNotam();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("ntm").hidden)closeNotam();});
 
 /* ---------- mapa sectorial (superpuesto en el satélite) ---------- */
 $("secOv").src="data/sectores.png?_="+BUILD;
@@ -1057,8 +1218,8 @@ $("themeBtn").addEventListener("click",()=>{themeMode=THEMES[(THEMES.indexOf(the
 /* ---------- arranque ---------- */
 function tick(){const n=new Date();$("utc").textContent=n.toISOString().slice(11,19)+" Z";$("loc").textContent="Local "+n.toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"})+" · "+n.toLocaleDateString("es-ES",{weekday:"short",day:"numeric",month:"short"});}
 tick();setInterval(tick,1000);
-checkVersion();initWin();load();refreshSat();loadSig();loadCol();loadStations();
-setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSig,300000);setInterval(loadCol,300000);setInterval(render,60000);
+checkVersion();initWin();load();refreshSat();loadSig();loadCol();loadStations();loadDelta();loadDareas();initOpsMaps();
+setInterval(load,300000);setInterval(refreshSat,600000);setInterval(loadSig,300000);setInterval(loadCol,300000);setInterval(render,60000);setInterval(loadDelta,600000);setInterval(loadDareas,300000);
 </script>
 
 </body>
