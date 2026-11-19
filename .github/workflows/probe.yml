@@ -1,0 +1,16 @@
+name: Prueba (temporal)
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          B=https://www.public.nm.eurocontrol.int/PUBPORTAL/gateway/spec/
+          curl -sS -m 60 -A "Mozilla/5.0" -D h.txt "$B/index.html" -o i.html; head -5 h.txt; wc -c i.html; cat i.html | head -c 3000; echo
+          for js in $(grep -oE '(src|href)="[^"]+\.(js|json)[^"]*"' i.html | cut -d'"' -f2 | head -20); do
+            u="$B$js"; case "$js" in http*) u="$js";; /*) u="https://www.public.nm.eurocontrol.int$js";; esac
+            echo "=== $u"; curl -sS -m 60 -A "Mozilla/5.0" "$u" -o f.js; wc -c f.js
+            grep -oE '"[^"]*(/gateway|rest/|PUBPORTAL|aup|AUP|eaup|EAUP|airspace|Airspace|query|service)[^"]{0,120}"' f.js | sort -u | head -60
+          done
