@@ -14,10 +14,10 @@ jobs:
           d=json.load(open('all.json'));F=d.get('features',[]);print('total',len(F),d.get('exceededTransferLimit'))
           c=collections.Counter(f['attributes']['qcode'] for f in F);print(c.most_common(40))
           PY
-          curl -sS -m 90 -G "$B" --data-urlencode "where=qcode LIKE 'QRD%' OR qcode LIKE 'QRR%' OR qcode LIKE 'QRT%'" --data-urlencode "outFields=*" --data-urlencode "returnGeometry=true" --data-urlencode "outSR=4326" --data-urlencode "geometryPrecision=4" --data-urlencode "f=json" -o d.json
+          curl -sS -m 90 -G "$B" --data-urlencode "where=qcode IN ('RDCA','RRCA')" --data-urlencode "outFields=*" --data-urlencode "returnGeometry=true" --data-urlencode "outSR=4326" --data-urlencode "geometryPrecision=4" --data-urlencode "f=json" -o d.json
           python3 - <<'PY'
           import json
-          d=json.load(open('d.json'));F=d.get('features',[]);print('D/R',len(F))
+          t=open('d.json').read();print(t[:300]);d=json.loads(t);F=d.get('features',[]);print('D/R',len(F))
           for f in F[:6]:
               a=dict(f['attributes']);g=f.get('geometry',{})
               print(json.dumps({k:a[k] for k in a if k not in('icaoFormatText',)},ensure_ascii=False)[:1500])
