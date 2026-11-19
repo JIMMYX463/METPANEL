@@ -70,8 +70,8 @@ jobs:
           pip install -q curl_cffi
           python3 scripts/fetch_notam.py || true
 
-      - name: Zonas D activas (ENAIRE)
-        run: python3 scripts/fetch_dareas.py || true
+      - name: Zonas D, P, R y TSA activas (ENAIRE)
+        run: python3 scripts/fetch_zonas.py || true
 
       - name: Mapas del bot (colores OTAN y significativo)
         if: steps.toca.outputs.colores == '1' || steps.toca.outputs.sig == '1' || steps.toca.outputs.delta == '1'
