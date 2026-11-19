@@ -7,11 +7,23 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - run: |
-          B=https://servais.enaire.es/insignias/rest/services
-          for f in NOTAM/NOTAM_APP_V3/FeatureServer INSIGNIA_VIGOR/Aero_APP_VIGOR_Airspace_V_6/MapServer; do
-            echo "=== $f"; curl -sS -m 60 "$B/$f/layers?f=json" | python3 -c "
-          import sys,json;d=json.load(sys.stdin)
-          for l in d.get('layers',[]): print(l['id'],l['name'],l.get('geometryType'),'|',', '.join(x['name'] for x in (l.get('fields') or [])[:40]))"
-          done
-          echo "=== muestra NOTAM capa 0..3"
-          for L in 0 1 2 3; do curl -sS -m 60 "$B/NOTAM/NOTAM_APP_V3/FeatureServer/$L/query?where=1%3D1&outFields=*&returnGeometry=false&resultRecordCount=3&f=json" | head -c 2500; echo; done
+          B="https://servais.enaire.es/insignias/rest/services/NOTAM/NOTAM_APP_V3/FeatureServer/1/query"
+          curl -sS -m 90 -G "$B" --data-urlencode "where=1=1" --data-urlencode "outFields=qcode,affectedElement" --data-urlencode "returnGeometry=false" --data-urlencode "f=json" --data-urlencode "resultRecordCount=4000" -o all.json
+          python3 - <<'PY'
+          import json,collections
+          d=json.load(open('all.json'));F=d.get('features',[]);print('total',len(F),d.get('exceededTransferLimit'))
+          c=collections.Counter(f['attributes']['qcode'] for f in F);print(c.most_common(40))
+          PY
+          curl -sS -m 90 -G "$B" --data-urlencode "where=qcode LIKE 'QRD%' OR qcode LIKE 'QRR%' OR qcode LIKE 'QRT%'" --data-urlencode "outFields=*" --data-urlencode "returnGeometry=true" --data-urlencode "outSR=4326" --data-urlencode "geometryPrecision=4" --data-urlencode "f=json" -o d.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('d.json'));F=d.get('features',[]);print('D/R',len(F))
+          for f in F[:6]:
+              a=dict(f['attributes']);g=f.get('geometry',{})
+              print(json.dumps({k:a[k] for k in a if k not in('icaoFormatText',)},ensure_ascii=False)[:1500])
+              print('  icao:',(a.get('icaoFormatText') or '')[:600].replace('\n',' | '))
+              print('  rings',len(g.get('rings',[])),'pts',sum(len(r) for r in g.get('rings',[])))
+          import collections
+          print(collections.Counter(f['attributes']['qcode'] for f in F))
+          print(sorted(set((f['attributes']['affectedElement'] or '') for f in F))[:200])
+          PY
