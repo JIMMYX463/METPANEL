@@ -14,7 +14,7 @@ from telethon.errors import SessionPasswordNeededError
 BOT = "meteolemobot"
 HOURS = ["00", "06", "12", "18"]
 DELTA = os.environ.get("DELTA_ZONA", "86")
-DELTA_PTS = os.environ.get("DELTA_PUNTOS", "ADFHJK")  # puntos que se usan (el más cercano al centro de cada sector)
+DELTA_PTS = os.environ.get("DELTA_PUNTOS", "ACFHJK")  # punto más cercano al número de cada sector
 GRAMET_IDS = [x for x in os.environ.get("GRAMET_IDS", "LEBZ,LEMO").split(",") if x]
 SESSION_FILE = pathlib.Path("data/tg.session.enc")
 API_ID = int(os.environ.get("TG_API_ID") or 0)

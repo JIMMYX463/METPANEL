@@ -159,9 +159,18 @@ select{font:600 .9rem var(--mono);background:var(--panel);color:var(--ink);borde
 .lmap .leaflet-container{font-family:var(--body)}
 .secov-l{position:absolute;max-width:none!important;pointer-events:none;transform-origin:50% 50%;opacity:.9}
 #dMap .secov-l{filter:grayscale(1) contrast(1.4);opacity:.55}
-.secpin{width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2px solid #fff;background:var(--accent);color:#fff;font:800 .95rem var(--mono);display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.45);cursor:pointer;padding:0}
-.secpin:hover,.secpin:focus-visible{background:var(--ink);outline:none}
-.secpin.off{background:var(--off);cursor:default}
+.secsvg{width:100%;height:auto;max-height:440px;display:block;border-radius:4px;background:var(--field);border:1px solid var(--line)}
+.secsvg .out{fill:var(--panel);stroke:var(--muted);stroke-width:3;stroke-linejoin:round}
+.secsvg .sc{cursor:pointer;outline:none}
+.secsvg .sc path{fill:color-mix(in srgb,var(--accent) 12%,transparent);stroke:var(--accent);stroke-width:3;stroke-linejoin:round;transition:fill .15s}
+.secsvg .sc:hover path,.secsvg .sc:focus-visible path{fill:color-mix(in srgb,var(--accent) 32%,transparent)}
+.secsvg .sc circle{fill:var(--accent);stroke:var(--panel);stroke-width:5}
+.secsvg .sc:hover circle,.secsvg .sc:focus-visible circle{fill:var(--ink)}
+.secsvg .sc text{fill:#fff;font:800 40px var(--mono);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.secsvg .sc:hover text,.secsvg .sc:focus-visible text{fill:var(--panel)}
+.secsvg .sc.off{cursor:default}.secsvg .sc.off circle{fill:var(--off)}
+.secsvg .ref circle{fill:var(--ink)}.secsvg .ref text{fill:var(--muted);font:700 26px var(--body)}
+.secsvg .ref.ad text{fill:var(--ink);font:800 28px var(--mono)}
 .dlab{background:none;border:0;box-shadow:none;padding:0;font:800 .66rem var(--mono);color:var(--ink);text-shadow:0 0 3px var(--panel),0 0 3px var(--panel),0 0 3px var(--panel);text-align:center;line-height:1.15;white-space:nowrap}
 .dlab::before{display:none}
 .dlab small{display:block;font-weight:600;font-size:.6rem;color:var(--muted)}
@@ -378,8 +387,8 @@ html{scroll-behavior:smooth}
   <section class="ops" aria-label="Mapas operativos">
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Sectores · GRAMET</span><span class="age" id="deltaAge"></span></div>
-      <div class="lmap" id="secMap" role="region" aria-label="Mapa de sectores: pulsa el número de un sector para ver su GRAMET"></div>
-      <div class="row"><span class="note">Pulsa el número de un sector para ver el GRAMET HARMONIE del punto más cercano a su centro · AEMET vía @meteolemobot</span></div>
+      <svg class="secsvg" id="secSvg" viewBox="40 20 1050 960" role="group" aria-label="Sectores: pulsa un sector para ver su GRAMET"></svg>
+      <div class="row"><span class="note">Pulsa un sector para ver el GRAMET HARMONIE del punto más cercano a su número · AEMET vía @meteolemobot</span></div>
     </div>
     <div class="box" style="display:grid;gap:10px">
       <div class="sec-h"><span class="label">Zonas activas · NOTAM y AIP</span><span class="age" id="dAge"></span></div>
@@ -506,7 +515,7 @@ html{scroll-behavior:smooth}
           <li><b>Significativo baja cota (IBE):</b> pestañas 00, 06, 12 y 18Z con la <b>fecha</b> de cada mapa; <b>✈</b> marca el más cercano a tu despegue y se elige solo. Una pestaña <b>discontinua</b> es un mapa anterior: aún no se ha publicado el de ese día.</li>
           <li><b>Suelta (LEBZ):</b> el logotipo de arriba a la izquierda se pone <b>verde</b> si LEBZ está apto suelta y <b>rojo</b> si no, según el último METAR: visibilidad &gt; 5000 m, techo BKN/OVC/VV ≥ 5000 ft y viento cruzado en pista 13/31 &lt; 15 kt, con racha cruzada máxima de 20 kt. Pasa el ratón por el logotipo para ver el motivo.</li>
           <li><b>GRAMET:</b> el botón de cada aeródromo abre el corte vertical de Ogimet para la ventana de vuelo: en el primero, el GRAMET HARMONIE de AEMET sobre su vertical desde la hora actual (vía Telegram, con día y horas en el título; si no está disponible, el de Ogimet); en los demás, la ruta desde el primero hasta él. Nivel según destino (LPBJ 230, LEZL 280, LEMO 330, resto 350).</li>
-          <li><b>Sectores · GRAMET:</b> mapa con los sectores; pulsa el número de un sector para ver el GRAMET HARMONIE (AEMET, vía @meteolemobot con <code>/delta 86</code>) del punto de la zona delta más cercano a su centro. Se renueva cada hora y empieza en la hora actual; el título indica día y horas.</li>
+          <li><b>Sectores · GRAMET:</b> dibujo de los sectores; pulsa un sector para ver el GRAMET HARMONIE (AEMET, vía @meteolemobot con <code>/delta 86</code>) del punto de la zona delta más cercano a su número. Se renueva cada hora y empieza en la hora actual; el título indica día y horas.</li>
           <li><b>Zonas activas:</b> zonas D (peligrosas), P (prohibidas), R (restringidas) y TSA/TRA de la Península, según ENAIRE. Relleno marcado: activadas por NOTAM en vigor; discontinuo: NOTAM que empieza en las próximas 48 h; trazo fino: activas según el AIP (H24, de orto a ocaso o con horario). Los botones D, P, R y TSA las muestran u ocultan. Pulsa en el mapa para ver toda la información de las zonas de ese punto (alturas, horario, validez y NOTAM completo). Solo España. Mapa base: Esri, HERE, Garmin y colaboradores de OpenStreetMap.</li>
           <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> colorea la temperatura de los topes nubosos, de azul a rojo cuanto más fríos (nubes más altas y convectivas). Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
@@ -1088,7 +1097,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611191600";
+const BUILD="202611192245";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
@@ -1104,11 +1113,24 @@ window.addEventListener("pageshow",e=>{if(e.persisted){checkVersion();refreshAll
 
 
 /* ---------- mapas operativos (Leaflet): sectores · GRAMET y zonas D activas ---------- */
-// Centro de cada sector (centroide del polígono del mapa sectorial) y punto de /delta 86 más cercano.
-const SECTORS=[{n:1,lat:39.4524,lon:-5.6123,pt:"A"},{n:2,lat:39.0855,lon:-5.4926,pt:"D"},{n:3,lat:38.3226,lon:-6.0371,pt:"H"},
-  {n:4,lat:38.1542,lon:-6.5465,pt:"K"},{n:5,lat:38.4896,lon:-7.0684,pt:"J"},{n:6,lat:39.1525,lon:-6.8184,pt:"F"}];
+// Dibujo de los sectores (coordenadas del mapa sectorial) y punto de /delta 86 más cercano a cada número.
+const SEC_OUT="M120 323L405 197L555 162L1075 30L855 515L810 632L757 630L440 968L368 922L165 800L178 760L183 742L135 752L118 712L70 635L52 630L55 610L88 545L80 500L100 485L140 458L160 448L170 435L185 390L205 370L195 350L188 333L165 325L140 328Z";
+const SECTORS=[
+  {n:1,pt:"A",x:498,y:262,d:"M342 312L443 192L555 162L1075 30L1022 147L390 375Q372 335 342 312Z"},
+  {n:2,pt:"C",x:565,y:400,d:"M390 375L1022 147L855 515L850 537L393 455Q402 415 390 375Z"},
+  {n:3,pt:"H",x:478,y:660,d:"M440 543L697 690L510 890L358 625Q412 592 440 543Z"},
+  {n:4,pt:"K",x:288,y:708,d:"M217 580Q272 588 320 560L510 890L440 968L368 922L165 800L178 760L186 742Z"},
+  {n:5,pt:"J",x:120,y:610,d:"M85 520L178 467Q200 497 230 505L217 580L186 742L135 752L118 712L70 635L52 630L55 610L88 545Z"},
+  {n:6,pt:"F",x:240,y:315,d:"M183 300L310 243L270 357Q238 343 210 360Z"}];
+function drawSectors(){
+  const svg=$("secSvg");if(!svg)return;
+  svg.innerHTML=`<path class="out" d="${SEC_OUT}"/>`+SECTORS.map(sc=>{const ok=DELTA&&DELTA.points&&DELTA.points[sc.pt];
+    return `<g class="sc${ok?"":" off"}" data-n="${sc.n}" tabindex="0" role="button" aria-label="Sector ${sc.n}: GRAMET${ok?"":" no disponible"}"><title>Sector ${sc.n} · GRAMET punto L86${sc.pt}</title><path d="${sc.d}"/><circle cx="${sc.x}" cy="${sc.y}" r="34"/><text x="${sc.x}" y="${sc.y}">${sc.n}</text></g>`;}).join("")
+    +`<g class="ref ad" aria-hidden="true"><circle cx="241" cy="428" r="9"/><text x="255" y="420">LEBZ</text></g><g class="ref" aria-hidden="true"><circle cx="413" cy="427" r="6"/><text x="424" y="452">Mérida</text></g>`;
+  svg.querySelectorAll(".sc").forEach(g=>{const sc=SECTORS.find(x=>x.n==g.dataset.n);g.onclick=()=>openSector(sc);g.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openSector(sc);}};});
+}
 const PEN_BOUNDS=[[35.9,-9.6],[43.9,3.4]];
-let DELTA=null,secMap=null,dMap=null,dLayer=null;
+let DELTA=null,dMap=null,dLayer=null;
 const darkNow=()=>document.documentElement.dataset.theme==="dark"||(!document.documentElement.dataset.theme&&matchMedia("(prefers-color-scheme: dark)").matches);
 // Mapa base gris de Esri (sin clave): fondo + capa de nombres, claro u oscuro según el tema
 const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/";
@@ -1130,12 +1152,7 @@ function baseMap(el,bounds){
 }
 function initOpsMaps(){
   if(!window.L){setTimeout(initOpsMaps,300);return;}
-  if(secMap)return;
-  secMap=baseMap("secMap",[[37.5,-8.0],[40.0,-4.5]]);
-  SECTORS.forEach(sc=>{
-    const ic=L.divIcon({className:"",html:`<button type="button" class="secpin" aria-label="GRAMET del sector ${sc.n}">${sc.n}</button>`,iconSize:[0,0]});
-    L.marker([sc.lat,sc.lon],{icon:ic,keyboard:false,title:"Sector "+sc.n+" · GRAMET"}).addTo(secMap).on("click",()=>openSector(sc));
-  });
+  if(dMap)return;
   dMap=baseMap("dMap",PEN_BOUNDS);
   const z=()=>{const c=dMap.getContainer(),k=dMap.getZoom();c.classList.toggle("far",k<8);c.classList.toggle("vfar",k<7);};dMap.on("zoomend",z);z();
   dMap.on("click",zonesAt);
@@ -1143,10 +1160,10 @@ function initOpsMaps(){
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change",retile);
   drawDareas();
 }
-function retile(){[secMap,dMap].forEach(m=>{if(m){m._mpTiles.setUrl(tileUrl("Base"));m._mpRef.setUrl(tileUrl("Reference"));}});}
+function retile(){[dMap].forEach(m=>{if(m){m._mpTiles.setUrl(tileUrl("Base"));m._mpRef.setUrl(tileUrl("Reference"));}});}
 async function loadDelta(){
   try{DELTA=JSON.parse(await fetch("data/delta.json?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));}catch(e){DELTA=null;}
-  const a=$("deltaAge");
+  const a=$("deltaAge");drawSectors();
   if(!DELTA||!DELTA.received){a.textContent="sin datos";return;}
   const any=Object.values(DELTA.points||{})[0];
   a.textContent=(any?gramSpan(any)+" · ":"")+"recibido "+hhmm(DELTA.received*1000);
