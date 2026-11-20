@@ -7,12 +7,17 @@ const dt=s=>{const m=s.match(/(\d\d)\/(\d\d)\/(\d{4}) (\d\d):(\d\d)/);return m?D
   const b=await chromium.launch({executablePath:process.env.CHROME||'/usr/bin/google-chrome',args:['--no-sandbox']});
   const ctx=await b.newContext({viewport:{width:1400,height:1000}});const p=await ctx.newPage();
   await p.goto(URL,{waitUntil:'networkidle',timeout:120000});await p.waitForTimeout(5000);
-  // filas del cuadro «European AUP/UUP»: enlaces con fecha en filas que dicen EAUP/EUUP
-  const n=await p.evaluate(()=>{window.__aup=[...document.querySelectorAll('a,div,span,td')].filter(e=>e.children.length===0&&/^\d\d\/\d\d\/\d{4} \d\d:\d\d$/.test(e.innerText.trim())&&/^\s*E(AUP|UUP)\b/.test((e.closest('tr')||{}).innerText||''));return window.__aup.length;});
-  console.log('Publicaciones en la lista:',n);
+  // filas del cuadro «European AUP/UUP»: tipo, inicio y fin; la primera de cada fin de validez es la más reciente
+  const pick=()=>p.evaluate(()=>{const rows=[...document.querySelectorAll('tr')].filter(tr=>/^\s*E(AUP|UUP)\s/.test(tr.innerText)&&(tr.innerText.match(/\d\d\/\d\d\/\d{4} \d\d:\d\d/g)||[]).length>=2&&tr.querySelectorAll('tr').length===0);
+    const seen={},out=[];rows.forEach((tr,i)=>{const d=tr.innerText.match(/\d\d\/\d\d\/\d{4} \d\d:\d\d/g);const til=d[d.length-1];if(!seen[til]){seen[til]=1;out.push({i,txt:tr.innerText.replace(/\s+/g,' ').trim()});}});
+    window.__rows=rows;return out;});
+  const targets=(await pick()).slice(0,3);
+  console.log('Publicaciones a leer:',targets.map(t=>t.txt).join(' | '));
   const plans={};
-  for(let i=0;i<Math.min(n,8)&&Object.keys(plans).length<2;i++){
-    const h=await p.evaluateHandle(i=>window.__aup[i],i);
+  for(const t of targets){
+    await pick();
+    const h=await p.evaluateHandle(i=>{const tr=window.__rows[i];return [...tr.querySelectorAll('a,div,span,td')].find(e=>e.children.length===0&&/^\d\d\/\d\d\/\d{4} \d\d:\d\d$/.test(e.innerText.trim()));},t.i);
+    if(!h.asElement()){console.log('Sin enlace',t.txt);continue;}
     const [q]=await Promise.all([ctx.waitForEvent('page',{timeout:30000}).catch(()=>null),h.asElement().click()]);
     if(!q)continue;
     try{
