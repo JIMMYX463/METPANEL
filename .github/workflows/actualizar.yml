@@ -61,6 +61,7 @@ jobs:
           print("colores=" + ("1" if f or age("data/colores.json", "received") > 9*60 else "0"))
           print("sig=" + ("1" if f or age("data/sig.json", None) > 9*60 else "0"))
           print("delta=" + ("1" if f or age("data/delta.json", "received") > 50*60 else "0"))
+          print("aup=" + ("1" if f or age("data/aup.json", "fetched") > 25*60 else "0"))
           PY
           cat "$GITHUB_OUTPUT"
 
@@ -69,6 +70,12 @@ jobs:
         run: |
           pip install -q curl_cffi
           python3 scripts/fetch_notam.py || true
+
+      - name: AUP/UUP (EUROCONTROL)
+        if: steps.toca.outputs.aup == '1'
+        run: |
+          cd "$RUNNER_TEMP" && npm i -s playwright-core@1.56.1 >/dev/null 2>&1 && cd - >/dev/null
+          NODE_PATH="$RUNNER_TEMP/node_modules" timeout 300 node scripts/fetch_aup.js || true
 
       - name: Zonas D, P, R y TSA activas (ENAIRE)
         run: python3 scripts/fetch_zonas.py || true
