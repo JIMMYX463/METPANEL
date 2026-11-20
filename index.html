@@ -518,7 +518,7 @@ html{scroll-behavior:smooth}
           <li><b>Suelta (LEBZ):</b> el logotipo de arriba a la izquierda se pone <b>verde</b> si LEBZ está apto suelta y <b>rojo</b> si no, según el último METAR: visibilidad &gt; 5000 m, techo BKN/OVC/VV ≥ 5000 ft y viento cruzado en pista 13/31 &lt; 15 kt, con racha cruzada máxima de 20 kt. Pasa el ratón por el logotipo para ver el motivo.</li>
           <li><b>GRAMET:</b> el botón de cada aeródromo abre el corte vertical de Ogimet para la ventana de vuelo: en el primero, el GRAMET HARMONIE de AEMET sobre su vertical desde la hora actual (vía Telegram, con día y horas en el título; si no está disponible, el de Ogimet); en los demás, la ruta desde el primero hasta él. Nivel según destino (LPBJ 230, LEZL 280, LEMO 330, resto 350).</li>
           <li><b>Sectores · GRAMET:</b> dibujo de los sectores; pulsa un sector para ver el GRAMET HARMONIE (AEMET, vía @meteolemobot con <code>/delta 86</code>) del punto de la zona delta más cercano a su número. Se renueva cada hora y empieza en la hora actual; el título indica día y horas.</li>
-          <li><b>Zonas activas:</b> zonas D (peligrosas), P (prohibidas), R (restringidas) y TSA/TRA de la Península, según ENAIRE. Relleno marcado: activadas por NOTAM en vigor; discontinuo: NOTAM que empieza en las próximas 48 h; trazo fino: activas según el AIP (H24, de orto a ocaso o con horario). Los botones D, P, R y TSA las muestran u ocultan, y «Solo ventana» deja solo las que pueden estar activas durante la ventana de vuelo (validez y horario del NOTAM; en el AIP, H24 y HJ; si el horario del AIP es texto libre, la zona se mantiene). Pulsa en el mapa para ver toda la información de las zonas de ese punto (alturas, horario, validez y NOTAM completo). Solo España. Mapa base: Esri, HERE, Garmin y colaboradores de OpenStreetMap.</li>
+          <li><b>Zonas activas:</b> zonas D (peligrosas), P (prohibidas), R (restringidas) y TSA/TRA de la Península, según ENAIRE. Relleno marcado: activadas por NOTAM en vigor; discontinuo: NOTAM que empieza en las próximas 48 h; trazo fino: activas según el AIP (H24, de orto a ocaso o con horario). Las zonas que se activan por AUP/UUP (EUROCONTROL, portal público del NOP) se marcan con relleno cuando tienen una franja asignada ahora y en discontinuo si la tienen más tarde; al pulsarlas se ven sus franjas y niveles. Los botones D, P, R y TSA las muestran u ocultan, y «Solo ventana» deja solo las que pueden estar activas durante la ventana de vuelo (validez y horario del NOTAM; franjas del AUP/UUP; en el AIP, H24 y HJ; si el horario del AIP es texto libre y no hay AUP, la zona se mantiene). Pulsa en el mapa para ver toda la información de las zonas de ese punto (alturas, horario, validez y NOTAM completo). Solo España. Mapa base: Esri, HERE, Garmin y colaboradores de OpenStreetMap.</li>
           <li><b>Satélite:</b> EUMETSAT; por defecto el <b>visible</b>; el <b>infrarrojo</b> colorea la temperatura de los topes nubosos, de azul a rojo cuanto más fríos (nubes más altas y convectivas). Con tus aeródromos marcados. <b>Zoom sectores</b> acerca la zona de trabajo y <b>Sectores ✓</b> muestra u oculta el mapa sectorial encima.</li>
           <li><b>Colores OTAN:</b> mapa de AEMET con todas las bases.</li>
           <li><b>Toca un mapa</b> para verlo a pantalla completa; vuelve a tocar para cerrarlo.</li>
@@ -534,6 +534,7 @@ html{scroll-behavior:smooth}
           <tr><td>Significativo</td><td>AEMET · @meteolemobot</td><td>cada 10 min</td></tr>
           <tr><td>GRAMET (izquierda)</td><td>AEMET · @meteolemobot</td><td>cada 10 min</td></tr>
           <tr><td>GRAMET sectores</td><td>AEMET · @meteolemobot</td><td>cada hora</td></tr>
+          <tr><td>AUP/UUP</td><td>EUROCONTROL</td><td>cada 30 min</td></tr>
           <tr><td>Zonas D, P, R, TSA</td><td>ENAIRE (NOTAM y AIP)</td><td>cada 5 min</td></tr>
           <tr><td>Satélite</td><td>EUMETSAT (directo)</td><td>cada 10 min</td></tr>
         </tbody></table>
@@ -1100,7 +1101,7 @@ $("help").addEventListener("click",e=>{if(e.target===$("help"))closeHelp();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("help").hidden)closeHelp();if(!$("gram").hidden)closeGramet();document.querySelectorAll(".mapframe.zoom").forEach(m=>m.classList.remove("zoom"));}});
 
 /* ---------- versión siempre al día y datos frescos al entrar ---------- */
-const BUILD="202611200045";
+const BUILD="202611200130";
 async function checkVersion(){
   try{
     const t=await fetch(location.pathname+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"");
@@ -1193,6 +1194,7 @@ const lv=x=>String(x||"").replace(/\s+/g," ").replace(/\b0+(\d+ ?FT)/i,"$1").tri
 async function getJ(u){return JSON.parse(await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.text()}));}
 async function loadDareas(){
   let n=null,a=null;try{n=await getJ("data/zonas_notam.json");}catch(e){}try{a=await getJ("data/zonas_aip.json");}catch(e){}
+  try{AUP=await getJ("data/aup.json");}catch(e){AUP=null;}
   ZONES=[...(a?a.zonas:[]),...(n?n.zonas:[])];ZONES.fetched=n&&n.fetched;
   drawDareas();
 }
@@ -1232,6 +1234,9 @@ function schedRanges(sched,day){ // tramos [inicio,fin] en minutos desde las 00Z
   return out;
 }
 function zInWindow(z,s,e){
+  if(z.src==="AIP"){const al=aupOf(z.id);
+    if(al.length&&aupCovers(s,e))return al.some(r=>r.from<e&&r.to>s);
+    if(aupManaged(z)&&aupCovers(s,e))return false;}
   if(z.src==="NOTAM"){if(!(z.from<e&&(!z.to||z.to>s)))return false;s=Math.max(s,z.from);if(z.to)e=Math.min(e,z.to);}
   const sc=z.src==="AIP"?(/^H24$/.test(z.sched)?"H24":/^HJ\b/.test(z.sched)?"HJ":null):(z.sched||"H24");
   if(!sc)return true;
@@ -1242,7 +1247,14 @@ function zInWindow(z,s,e){
   }
   return false;
 }
-function zState(z){const now=Date.now();return z.src==="AIP"?"aip":(z.from>now?"next":"on");}
+// AUP/UUP (EUROCONTROL): franjas asignadas a cada zona en los planes vigentes
+let AUP=null;
+const aupOf=id=>AUP&&id?AUP.plans.flatMap(p=>p.rsa.filter(r=>r.id===id).map(r=>({...r,plan:p}))).sort((a,b)=>a.from-b.from):[];
+const aupCovers=(s,e)=>!!AUP&&AUP.plans.some(p=>p.wef<=s)&&AUP.plans.some(p=>p.til>=e);
+const aupManaged=z=>/AUP|UUP/i.test(z.sched||"");
+function zState(z){const now=Date.now();
+  if(z.src==="AIP"){const al=aupOf(z.id);if(al.some(r=>r.from<=now&&r.to>now))return "aup";if(al.some(r=>r.from>now))return "aupnext";return "aip";}
+  return z.from>now?"next":"on";}
 function drawDareas(){
   const cnt={D:0,P:0,R:0,TSA:0};ZONES.forEach(z=>{if(!zFlight||!win.s||zInWindow(z,win.s,win.e))cnt[z.t]=(cnt[z.t]||0)+1;});
   zWinKey=win.s+"-"+win.e;
@@ -1252,15 +1264,16 @@ function drawDareas(){
   $("zTypes").querySelectorAll("button[data-t]").forEach(b=>b.onclick=()=>{zOn[b.dataset.t]=!zOn[b.dataset.t];ls.set("mp-ztypes",JSON.stringify(zOn));drawDareas();});
   $("zTypes").querySelector(".zfl").onclick=()=>{zFlight=!zFlight;ls.set("mp-zflight",zFlight?"1":"0");drawDareas();};
   const nN=ZONES.filter(z=>z.src==="NOTAM"&&zState(z)==="on").length;
-  $("dAge").textContent=ZONES.length?`${nN} por NOTAM en vigor${ZONES.fetched?" · ENAIRE "+hhmm(ZONES.fetched*1000):""}`:"sin datos";
+  const nA=ZONES.filter(z=>zState(z)==="aup").length,lastP=AUP&&AUP.plans.length?AUP.plans[AUP.plans.length-1]:null;
+  $("dAge").textContent=ZONES.length?`${nN} por NOTAM · ${nA} por AUP${lastP?" · "+lastP.type+" "+hhmm(lastP.released):""}`:"sin datos";
   if(!dMap)return;
   if(dLayer)dLayer.remove();dLayer=L.layerGroup().addTo(dMap);
-  const order={aip:0,next:1,on:2};
+  const order={aip:0,aupnext:1,next:1,aup:2,on:2};
   ZONES.filter(vis).sort((a,b)=>order[zState(a)]-order[zState(b)]).forEach(z=>{
     const c=ZT[z.t].c,st=zState(z);
-    const sty=st==="on"?{color:c,weight:2,fillColor:c,fillOpacity:.18}:st==="next"?{color:c,weight:1.6,dashArray:"5 5",fillOpacity:0}:{color:c,weight:1,opacity:.75,fillColor:c,fillOpacity:.07};
+    const sty=st==="on"||st==="aup"?{color:c,weight:2,fillColor:c,fillOpacity:.18}:st==="next"||st==="aupnext"?{color:c,weight:1.6,dashArray:"5 5",fillOpacity:0}:{color:c,weight:1,opacity:.75,fillColor:c,fillOpacity:.07};
     const ly=L.polygon(z.rings,{...sty,interactive:false}).addTo(dLayer);
-    if(z.id&&z.id!=="Temporal")ly.bindTooltip(`${esc(z.id)}<small>${esc(lv(z.lower))}–${esc(lv(z.upper))}</small>`,{permanent:true,direction:"center",className:"dlab"+(st==="aip"?" aip":""),interactive:false});
+    if(z.id&&z.id!=="Temporal")ly.bindTooltip(`${esc(z.id)}<small>${esc(lv(z.lower))}–${esc(lv(z.upper))}</small>`,{permanent:true,direction:"center",className:"dlab"+(st==="aip"||st==="aupnext"?" aip":""),interactive:false});
   });
 }
 // ¿Qué zonas contienen el punto pulsado? (par-impar sobre todos los anillos)
@@ -1271,13 +1284,17 @@ function zonesAt(e){
 }
 let ntmReturn=null;
 function openNotam(list){
-  const now=Date.now(),rank={on:0,next:1,aip:2};
+  const now=Date.now(),rank={on:0,aup:0,next:1,aupnext:1,aip:2};
   list=list.slice().sort((a,b)=>rank[zState(a)]-rank[zState(b)]||a.t.localeCompare(b.t));
   $("ntmTitle").textContent=list.length===1?(list[0].id+(list[0].name?" · "+list[0].name:"")):list.length+" zonas en este punto";
   $("ntmBody").innerHTML=list.map(z=>{const st=zState(z),c=ZT[z.t].c;
-    const stTxt=st==="on"?"EN VIGOR":st==="next"?"DESDE "+dtz(z.from):"ACTIVA SEGÚN AIP";
+    const al=aupOf(z.id).filter(r=>r.to>now),fl=x=>x&&x!=="999"?"FL"+x:"UNL";
+    const stTxt=st==="on"?"EN VIGOR":st==="next"?"DESDE "+dtz(z.from):st==="aup"?"ACTIVA POR AUP":st==="aupnext"?"AUP DESDE "+dtz(al.find(r=>r.from>now).from):"SEGÚN AIP";
+    const plan=AUP&&AUP.plans.length?AUP.plans[AUP.plans.length-1]:null;
+    const aupRow=al.length?`<dt>AUP/UUP</dt><dd>${al.map(r=>`${dtz(r.from)}–${dtz(r.to).slice(-5)} · ${r.fl[0]||r.fl[1]?fl(r.fl[0])+"–"+fl(r.fl[1]):(r.ft[0]||"SFC")+"–"+r.ft[1]+" FT"}${r.from<=now&&r.to>now?" (ahora)":""}`).join("<br>")}<br><span style="color:var(--muted)">${esc(al[al.length-1].plan.type)} publicado ${dtz(al[al.length-1].plan.released)}</span></dd>`
+      :(plan&&aupManaged(z)?`<dt>AUP/UUP</dt><dd>Sin asignación en el ${esc(plan.type)} publicado ${dtz(plan.released)} (válido hasta ${dtz(plan.til)})</dd>`:"");
     return `<div class="notam" style="border-left-color:${c}"><div class="zhead" style="--zc:${c}"><span class="zt">${z.t}</span><b>${esc(z.id)}</b>${z.name?`<span>${esc(z.name)}</span>`:""}<span class="zsrc">${z.src}</span><span class="zst" style="color:${c}">${stTxt}</span></div>
-      <dl class="zgrid"><dt>Alturas</dt><dd>${esc(lv(z.lower))} – ${esc(lv(z.upper))}</dd><dt>Horario</dt><dd>${esc(z.sched||"H24")}</dd>${z.src==="NOTAM"?`<dt>Validez</dt><dd>${dtz(z.from)} → ${dtz(z.to)}</dd><dt>NOTAM</dt><dd>${esc(z.notam||"")}</dd>`:""}</dl>
+      <dl class="zgrid"><dt>Alturas</dt><dd>${esc(lv(z.lower))} – ${esc(lv(z.upper))}</dd><dt>Horario</dt><dd>${esc(z.sched||"H24")}</dd>${aupRow}${z.src==="NOTAM"?`<dt>Validez</dt><dd>${dtz(z.from)} → ${dtz(z.to)}</dd><dt>NOTAM</dt><dd>${esc(z.notam||"")}</dd>`:""}</dl>
       ${z.text?`<p>${esc(z.text)}</p>`:""}</div>`;}).join("");
   ntmReturn=document.activeElement;$("ntm").hidden=false;document.body.style.overflow="hidden";$("ntmClose").focus();
 }
