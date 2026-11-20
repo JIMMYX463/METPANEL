@@ -23,8 +23,11 @@ jobs:
           const q=pop||p;await q.waitForTimeout(15000);
           const info=await q.evaluate(()=>{const t=document.body.innerText;const m=t.match(/Type\s+(\S+)\s+Valid WEF\s+(\S+ \S+)\s+Valid TIL\s+(\S+ \S+)\s+Released On\s+(\S+ \S+)/);return m?m.slice(1):null;});
           console.log('INFO',JSON.stringify(info));
-          const rows=await q.evaluate(()=>[...document.querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>td.innerText.trim())).filter(r=>r.length>=8&&/^L[EP]/.test(r[0])));
-          console.log('NROWS',rows.length);rows.slice(0,80).forEach(r=>console.log('ROW',JSON.stringify(r)));
+          await q.click('text=RSA Allocations');await q.waitForTimeout(3000);
+          const dbg=await q.evaluate(()=>{const e=[...document.querySelectorAll('*')].find(x=>x.children.length===0&&/^LED\d/.test(x.innerText.trim()));if(!e)return 'none';let r=e;for(let i=0;i<6&&r.parentElement;i++){r=r.parentElement;if(r.tagName==='TR')break;}return r.tagName+' | '+r.outerHTML.slice(0,1500);});
+          console.log('DBG',dbg.replace(/\n/g,' '));
+          const rows=await q.evaluate(()=>[...document.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll(':scope > td')].map(td=>td.innerText.trim())).filter(r=>r.length>=6&&/^L[EP]/.test(r[0])));
+          console.log('NROWS',rows.length);rows.slice(0,120).forEach(r=>console.log('ROW',JSON.stringify(r)));
           const hdr=await q.evaluate(()=>[...document.querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>td.innerText.trim())).filter(r=>r.includes('MNM FL')).slice(0,3));console.log('HDR',JSON.stringify(hdr));
           const tabs=await q.evaluate(()=>[...document.querySelectorAll('div,td,a')].filter(e=>e.children.length===0&&/RSA Allocations|ATS Route|RAD Activations/.test(e.innerText)).map(e=>e.tagName+':'+e.innerText.trim()));console.log('TABS',JSON.stringify(tabs));
           await b.close();})();
