@@ -20,8 +20,13 @@ jobs:
           const h=await p.evaluateHandle(()=>{const xs=[...document.querySelectorAll('a,div,span,td')].filter(e=>/^\d\d\/\d\d\/\d{4} \d\d:\d\d$/.test(e.innerText.trim())&&e.children.length===0&&/E?UUP|E?AUP/.test((e.closest('tr')||{}).innerText||''));return xs[0];});
           console.log('TARGET',await h.evaluate(e=>e&&e.closest('tr').innerText));
           const [pop]=await Promise.all([ctx.waitForEvent('page',{timeout:30000}).catch(()=>null),h.asElement().click()]);
-          const q=pop||p;await q.waitForTimeout(15000);await q.screenshot({path:'shots/aup.png',fullPage:true});
-          console.log('URL',q.url());console.log('TEXT2',(await q.innerText('body')).replace(/\s+/g,' ').slice(0,6000));
+          const q=pop||p;await q.waitForTimeout(15000);
+          const info=await q.evaluate(()=>{const t=document.body.innerText;const m=t.match(/Type\s+(\S+)\s+Valid WEF\s+(\S+ \S+)\s+Valid TIL\s+(\S+ \S+)\s+Released On\s+(\S+ \S+)/);return m?m.slice(1):null;});
+          console.log('INFO',JSON.stringify(info));
+          const rows=await q.evaluate(()=>[...document.querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>td.innerText.trim())).filter(r=>r.length>=8&&/^L[EP]/.test(r[0])));
+          console.log('NROWS',rows.length);rows.slice(0,80).forEach(r=>console.log('ROW',JSON.stringify(r)));
+          const hdr=await q.evaluate(()=>[...document.querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>td.innerText.trim())).filter(r=>r.includes('MNM FL')).slice(0,3));console.log('HDR',JSON.stringify(hdr));
+          const tabs=await q.evaluate(()=>[...document.querySelectorAll('div,td,a')].filter(e=>e.children.length===0&&/RSA Allocations|ATS Route|RAD Activations/.test(e.innerText)).map(e=>e.tagName+':'+e.innerText.trim()));console.log('TABS',JSON.stringify(tabs));
           await b.close();})();
           JS
           node t.js
