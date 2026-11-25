@@ -1,53 +1,53 @@
 {
  "zona": "86",
- "received": 1795630594,
+ "received": 1795633855,
  "points": {
   "A": {
    "file": "delta86_A.jpg",
-   "received": 1795630594,
+   "received": 1795633855,
    "date": "2026-11-25",
-   "from": 19,
-   "to": 4,
+   "from": 20,
+   "to": 5,
    "ocr": true
   },
   "C": {
    "file": "delta86_C.jpg",
-   "received": 1795630595,
+   "received": 1795633856,
    "date": "2026-11-25",
-   "from": 19,
-   "to": 4,
+   "from": 20,
+   "to": 5,
    "ocr": true
   },
   "F": {
    "file": "delta86_F.jpg",
-   "received": 1795630596,
+   "received": 1795633857,
    "date": "2026-11-25",
-   "from": 19,
-   "to": 4,
+   "from": 20,
+   "to": 5,
    "ocr": true
   },
   "H": {
    "file": "delta86_H.jpg",
-   "received": 1795630597,
+   "received": 1795633858,
    "date": "2026-11-25",
-   "from": 19,
-   "to": 4,
+   "from": 20,
+   "to": 5,
    "ocr": true
   },
   "J": {
    "file": "delta86_J.jpg",
-   "received": 1795630597,
+   "received": 1795633859,
    "date": "2026-11-25",
-   "from": 19,
-   "to": 4,
+   "from": 20,
+   "to": 5,
    "ocr": true
   },
   "K": {
    "file": "delta86_K.jpg",
-   "received": 1795630598,
+   "received": 1795633859,
    "date": "2026-11-25",
-   "from": 19,
-   "to": 4,
+   "from": 20,
+   "to": 5,
    "ocr": true
   }
  }
