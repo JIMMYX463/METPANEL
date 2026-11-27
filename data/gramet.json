@@ -1,18 +1,18 @@
 {
  "LEBZ": {
   "file": "gramet_LEBZ.jpg",
-  "received": 1795791369,
+  "received": 1795791713,
   "date": "2026-11-27",
-  "from": 15,
-  "to": 24,
+  "from": 16,
+  "to": 1,
   "ocr": true
  },
  "LEMO": {
   "file": "gramet_LEMO.jpg",
-  "received": 1795791375,
+  "received": 1795791719,
   "date": "2026-11-27",
-  "from": 15,
-  "to": 24,
+  "from": 16,
+  "to": 1,
   "ocr": true
  }
 }
